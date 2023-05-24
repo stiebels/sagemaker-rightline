@@ -1,0 +1,55 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Python package
+
+env:
+  REQUIREMENTS_FILE: requirements_all.txt
+  POETRY_VERSION: 1.4.2
+  INSTALL_DEPENDENCY_GROUPS: dev
+  TESTS_DIR: ./tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  Check-Test-Build:
+    name: Check, Test and Build
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Pre-Commit
+      uses: pre-commit/action@v3.0.0
+    - name: Set up poetry
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install poetry==$POETRY_VERSION
+        poetry config virtualenvs.create true
+    - name: Install dependencies
+      run: |
+        poetry export --format requirements.txt --output $REQUIREMENTS_FILE --without-hashes --without-urls --with $INSTALL_DEPENDENCY_GROUPS
+        python -m pip install -r $REQUIREMENTS_FILE
+    - name: Test with pytest
+      run: |
+        pytest $TESTS_DIR
+    - name: Build
+      run: |
+        poetry build
+
+  Ready:
+    name: Ready
+    needs: [Check-Test-Build]
+    uses: ./.github/workflows/ready.yml

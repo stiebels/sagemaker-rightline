@@ -1,0 +1,14 @@
+on:
+  workflow_call:
+    inputs:
+      message:
+        description: Ready message
+        required: false
+        type: 'string'
+        default: "All jobs passed successfully."
+
+jobs:
+  ready:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ${{ inputs.message }}

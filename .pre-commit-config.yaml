@@ -1,0 +1,32 @@
+fail_fast: false
+
+repos:
+-   repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+    -   id: black
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -   id: check-added-large-files
+    -   id: check-json
+    -   id: check-merge-conflict
+    -   id: check-yaml
+        args: ['--unsafe']
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+-   repo: https://github.com/myint/docformatter
+    rev: v1.7.0
+    hooks:
+    -   id: docformatter
+        args: [--in-place]
+-   repo: https://github.com/pycqa/flake8
+    rev: 6.0.0
+    hooks:
+    -   id: flake8
+        additional_dependencies: [Flake8-pyproject]
+-   repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+    -   id: isort
+        args: ["--profile", "black", "--filter-files"]
