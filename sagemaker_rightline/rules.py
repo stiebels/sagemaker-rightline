@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Union
 
 from sagemaker_rightline.model import Rule, ValidationResult
 
@@ -10,7 +10,11 @@ class Equals(Rule):
         """Check if two lists are equal."""
         super().__init__("Equals")
 
-    def run(self, observed: List[Any], expected: List[Any]) -> ValidationResult:
+    def run(
+        self,
+        observed: List[Union[int, float, str, dict]],
+        expected: List[Union[int, float, str, dict]],
+    ) -> ValidationResult:
         """Check if two lists are equal.
 
         :param observed: observed list
@@ -19,7 +23,12 @@ class Equals(Rule):
         :return: validation result
         :rtype: ValidationResult
         """
-        is_equal = set(observed) == set(expected)
+        try:
+            # In case of int, float, str
+            is_equal = set(observed) == set(expected)
+        except TypeError:
+            # In case of dict
+            is_equal = observed == expected
         return ValidationResult(
             success=True if is_equal else False,
             message=f"{str(observed)} does {'not ' if not is_equal else ''}equal {str(expected)}",
