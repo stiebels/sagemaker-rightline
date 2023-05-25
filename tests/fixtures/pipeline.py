@@ -1,4 +1,4 @@
-from sagemaker.processing import ScriptProcessor
+from sagemaker.processing import NetworkConfig, ScriptProcessor
 from sagemaker.spark.processing import PySparkProcessor
 from sagemaker.workflow.parameters import ParameterString
 from sagemaker.workflow.pipeline import Pipeline
@@ -19,9 +19,15 @@ def get_sagemaker_pipeline(
         base_job_name="sm_processor",
         role=TEST_ROLE_ARN,
         image_uri=IMAGE_1_URI,
+        network_config=NetworkConfig(
+            enable_network_isolation=True,
+            security_group_ids=["sg-12345"],
+            subnets=["subnet-12345"],
+            encrypt_inter_container_traffic=True,
+        ),
     )
     sm_processor_spark = PySparkProcessor(
-        base_job_name="sm_processor",
+        base_job_name="sm_processors",
         role=TEST_ROLE_ARN,
         image_uri=IMAGE_2_URI,
         instance_type="ml.m5.xlarge",

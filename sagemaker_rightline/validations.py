@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Union
 
 import boto3
 from botocore.exceptions import ClientError
+from sagemaker.processing import NetworkConfig
 from sagemaker.workflow.parameters import Parameter
 from sagemaker.workflow.pipeline import Pipeline
 
@@ -44,7 +45,7 @@ class PipelineParameters(Validation):
 
 
 class StepKmsKeyId(Validation):
-    """Validate KmsKeyId in ProcessingOutput.
+    """Validate KmsKeyId in Step.
 
     This validation is useful when you want to ensure that the KmsKeyId
     of a Pipeline Step is as expected.
@@ -53,7 +54,7 @@ class StepKmsKeyId(Validation):
     def __init__(
         self, kms_key_id_expected: str, rule: Rule, step_name: Optional[str] = None
     ) -> None:
-        """Initialize HasKmsKeyIdInProcessingOutput validation."""
+        """Initialize StepKmsKeyId validation."""
         self.step_filter: str = f"name=={step_name}" if step_name else ""
         super().__init__(name="StepKmsKeyId", path=f".steps[{self.step_filter}].kms_key", rule=rule)
         self.kms_key_id_expected: str = kms_key_id_expected
@@ -152,3 +153,51 @@ class StepImagesExistOnEcr(Validation):
                 subject=str(exist),
             )
         }
+
+
+class StepNetworkConfig(Validation):
+    """Validate NetworkConfig in Step.
+
+    This validation is useful when you want to ensure that the
+    NetworkConfig of a Pipeline Step's Processor is as expected.
+    """
+
+    def __init__(
+        self, network_config_expected: NetworkConfig, rule: Rule, step_name: Optional[str] = None
+    ) -> None:
+        """Initialize StepNetworkConfig validation."""
+        self.step_filter: str = f"name=={step_name}" if step_name else ""
+        super().__init__(
+            name="StepNetworkConfig",
+            path=f".steps[{self.step_filter}].processor.network_config",
+            rule=rule,
+        )
+        self.network_config_expected: NetworkConfig = network_config_expected
+
+    def run(
+        self,
+        sagemaker_pipeline: Pipeline,
+    ) -> Dict[str, ValidationResult]:
+        """Runs validation of NetworkConfigs on Pipeline.
+
+        :param sagemaker_pipeline: SageMaker Pipeline
+        :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
+        :return: Dict containing the validation result
+        :rtype: Dict[str, ValidationResult]
+        """
+        network_configs_observed = self.get_attribute(sagemaker_pipeline)
+        # Converting objects to dicts to make it comparable
+        # Handling None values
+        network_configs_observed_dict = []
+        for nwc in network_configs_observed:
+            if nwc:
+                network_configs_observed_dict.append(nwc.__dict__)
+            else:
+                network_configs_observed_dict.append(None)
+        network_config_expected_dict = (
+            self.network_config_expected.__dict__
+            if self.network_config_expected
+            else self.network_config_expected
+        )
+        results = self.rule.run(network_configs_observed_dict, [network_config_expected_dict])
+        return {self.name: results}

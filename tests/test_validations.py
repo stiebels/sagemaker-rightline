@@ -1,5 +1,6 @@
 import pytest
 from moto import mock_ecr
+from sagemaker.processing import NetworkConfig
 from sagemaker.workflow.parameters import ParameterString
 
 from sagemaker_rightline.model import ValidationResult
@@ -9,6 +10,7 @@ from sagemaker_rightline.validations import (
     PipelineParameters,
     StepImagesExistOnEcr,
     StepKmsKeyId,
+    StepNetworkConfig,
 )
 from tests.fixtures.constants import TEST_ACCOUNT_ID, TEST_REGION_NAME
 from tests.fixtures.image_details import (
@@ -153,9 +155,7 @@ def test_has_parameters_raise() -> None:
         ["does-not-exist", False],
     ],
 )
-def test_has_kms_key_id_in_processing_output(
-    kms_key_id_expected, success, sagemaker_pipeline
-) -> None:
+def test_step_kms_key_id(kms_key_id_expected, success, sagemaker_pipeline) -> None:
     has_kms_key_id_in_processing_output = StepKmsKeyId(
         kms_key_id_expected=kms_key_id_expected,
         rule=Equals(),
@@ -173,9 +173,7 @@ def test_has_kms_key_id_in_processing_output(
         ["does-not-exist", False],
     ],
 )
-def test_has_kms_key_id_in_processing_output_filter(
-    kms_key_id_expected, success, sagemaker_pipeline
-) -> None:
+def test_step_kms_key_id_filter(kms_key_id_expected, success, sagemaker_pipeline) -> None:
     has_kms_key_id_in_processing_output = StepKmsKeyId(
         kms_key_id_expected=kms_key_id_expected,
         step_name="sm_processing_step_sklearn",
@@ -194,9 +192,7 @@ def test_has_kms_key_id_in_processing_output_filter(
         ["does-not-exist", False],
     ],
 )
-def test_has_kms_key_id_in_processing_output_no_filter(
-    kms_key_id_expected, success, sagemaker_pipeline
-) -> None:
+def test_step_kms_key_id_no_filter(kms_key_id_expected, success, sagemaker_pipeline) -> None:
     has_kms_key_id_in_processing_output = StepKmsKeyId(
         kms_key_id_expected=kms_key_id_expected,
         rule=Equals(),
@@ -205,3 +201,104 @@ def test_has_kms_key_id_in_processing_output_no_filter(
         has_kms_key_id_in_processing_output.name
     ]
     assert results.success == success
+
+
+def test_step_network_config(
+    sagemaker_pipeline,
+) -> None:
+    network_config_expected = NetworkConfig(
+        enable_network_isolation=True,
+        security_group_ids=["sg-12345"],
+        subnets=["subnet-12345"],
+        encrypt_inter_container_traffic=True,
+    )
+    step_network_config = StepNetworkConfig(
+        network_config_expected=network_config_expected,
+        rule=Equals(),
+    )
+    results = step_network_config.run(sagemaker_pipeline)[step_network_config.name]
+    assert not results.success
+
+
+@pytest.mark.parametrize(
+    "network_config_expected,success,step_name",
+    [
+        [
+            NetworkConfig(
+                enable_network_isolation=True,
+                security_group_ids=["sg-12345"],
+                subnets=["subnet-12345"],
+                encrypt_inter_container_traffic=True,
+            ),
+            True,
+            "sm_processing_step_sklearn",
+        ],
+        [
+            NetworkConfig(
+                enable_network_isolation=True,
+                security_group_ids=["sg-12345"],
+                subnets=["other-subnet"],
+                encrypt_inter_container_traffic=False,
+            ),
+            False,
+            "sm_processing_step_sklearn",
+        ],
+        [NetworkConfig(), False, "sm_processing_step_sklearn"],
+        [None, False, "sm_processing_step_sklearn"],
+        [None, True, "sm_processing_step_spark"],
+        [NetworkConfig(), False, "sm_processing_step_spark"],
+    ],
+)
+def test_step_network_config_filter(
+    network_config_expected, success, step_name, sagemaker_pipeline
+) -> None:
+    step_network_config = StepNetworkConfig(
+        network_config_expected=network_config_expected,
+        rule=Equals(),
+        step_name=step_name,
+    )
+    results = step_network_config.run(sagemaker_pipeline)[step_network_config.name]
+    assert results.success == success
+
+
+#
+#
+# @pytest.mark.parametrize(
+#     "kms_key_id_expected,success",
+#     [
+#         ["some/kms-key-alias", True],
+#         ["does-not-exist", False],
+#     ],
+# )
+# def test_step_network_config_filter(
+#     kms_key_id_expected, success, sagemaker_pipeline
+# ) -> None:
+#     has_kms_key_id_in_processing_output = StepKmsKeyId(
+#         kms_key_id_expected=kms_key_id_expected,
+#         step_name="sm_processing_step_sklearn",
+#         rule=Equals(),
+#     )
+#     results = has_kms_key_id_in_processing_output.run(sagemaker_pipeline)[
+#         has_kms_key_id_in_processing_output.name
+#     ]
+#     assert results.success == success
+#
+#
+# @pytest.mark.parametrize(
+#     "kms_key_id_expected,success",
+#     [
+#         ["some/kms-key-alias", True],
+#         ["does-not-exist", False],
+#     ],
+# )
+# def test_step_network_config_no_filter(
+#     kms_key_id_expected, success, sagemaker_pipeline
+# ) -> None:
+#     has_kms_key_id_in_processing_output = StepKmsKeyId(
+#         kms_key_id_expected=kms_key_id_expected,
+#         rule=Equals(),
+#     )
+#     results = has_kms_key_id_in_processing_output.run(sagemaker_pipeline)[
+#         has_kms_key_id_in_processing_output.name
+#     ]
+#     assert results.success == success
