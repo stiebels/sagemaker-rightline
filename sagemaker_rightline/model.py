@@ -3,7 +3,8 @@ import re
 from abc import ABC, abstractmethod
 from copy import copy
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from operator import attrgetter
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import pandas as pd
 from sagemaker.workflow.pipeline import Pipeline
@@ -50,6 +51,37 @@ class Validation(ABC):
         self.name: str = name
         self.rule: Rule = rule
 
+    @staticmethod
+    def get_filtered_attributes(filter_subject: Iterable[object], path: str) -> List[object]:
+        """Get filtered attributes from path.
+
+        :param filter_subject: subject to be filtered
+        :type filter_subject: Iterable[object]
+        :param path: path to the attribute to be filtered
+        :type path: str
+        :return: filtered attributes
+        :rtype: List[object]
+        """
+        # TODO: refactor
+        filtered_steps = []
+        filter_conditions = (
+            re.search("\[(.*?)\]", path).group(1).replace(" ", "").split("&&")  # noqa: W605
+        )
+        filter_conditions = [
+            condition.replace("/", ".") for condition in filter_conditions if condition
+        ]
+        for subject in filter_subject:
+            match = []
+            for condition in filter_conditions:
+                filter_key, filter_value = condition.split("==")
+                if attrgetter(filter_key)(subject) != filter_value:
+                    match.append(False)
+                    continue
+                match.append(True)
+            if all(match):
+                filtered_steps.append(subject)
+        return filtered_steps
+
     def get_attribute(
         self,
         sagemaker_pipeline: Pipeline,
@@ -66,21 +98,15 @@ class Validation(ABC):
         for path in self.paths:
             attr_path = path.split(".")[1:]
             sm_pipeline_copy = copy(sagemaker_pipeline)
-            for attr in attr_path:
+            for ix, attr in enumerate(attr_path):
                 if attr.endswith("]"):
                     has_filter_dict = attr[-2] != "["
                     raw_attr = attr.split("[")[0]
                     sm_pipeline_copy = getattr(sm_pipeline_copy, raw_attr)
                     if has_filter_dict:
-                        # step_name filtering
-                        filter_dict = re.search("\[(.*?)\]", attr).group(1)  # noqa: W605
-                        filter_key, filter_value = filter_dict.split("==")
-                        filtered_attrs = []
-                        for ix, sub_attr in enumerate(sm_pipeline_copy):
-                            if getattr(sub_attr, filter_key) == filter_value:
-                                filtered_attrs.append(sub_attr)
-                        sm_pipeline_copy = filtered_attrs
-
+                        sm_pipeline_copy = self.get_filtered_attributes(
+                            sm_pipeline_copy, ".".join(attr_path[ix:])
+                        )
                 else:
                     sm_pipeline_copy = [
                         getattr(sub_attr, attr)

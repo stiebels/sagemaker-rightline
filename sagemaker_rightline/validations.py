@@ -1,14 +1,11 @@
 import re
 from dataclasses import dataclass
-from inspect import isfunction
 from typing import Dict, List, Optional, Union
 
 import boto3
 from botocore.exceptions import ClientError
-from sagemaker.processing import NetworkConfig
 from sagemaker.workflow.parameters import Parameter
 from sagemaker.workflow.pipeline import Pipeline
-from sagemaker.workflow.steps import TrainingStep
 
 from sagemaker_rightline.model import Rule, Validation, ValidationResult
 
@@ -62,8 +59,8 @@ class StepKmsKeyId(Validation):
         super().__init__(
             name="StepKmsKeyId",
             paths=[
-                f".steps[{self.step_filter}].kms_key",
-                f".steps[{self.step_filter}].estimator.output_kms_key",
+                f".steps[{self.step_filter} && step_type/value==Processing].kms_key",
+                f".steps[{self.step_filter} && step_type/value==Training].estimator.output_kms_key",
             ],
             rule=rule,
         )
@@ -107,14 +104,16 @@ class StepImagesExistOnEcr(Validation):
 
     def __init__(
         self,
-        boto3_client: Union["boto3.client('ecr')", str] = "ecr",  # noqa: F821
+        boto3_client: Union["boto3.client('ecr')", str] = "ecr",  # noqa F821
+        step_name: Optional[str] = None,
     ) -> None:
         """Initialize ImageExists validation."""
+        self.step_filter: str = f"name=={step_name}" if step_name else ""
         super().__init__(
             name="StepImagesExistOnEcr",
             paths=[
-                ".steps[].processor.image_uri",
-                ".steps[].estimator.image_uri",
+                f".steps[{self.step_filter} && step_type/value==Processing].processor.image_uri",
+                f".steps[{self.step_filter} && step_type/value==Training].estimator.image_uri",
             ],
         )
         if isinstance(boto3_client, str) and boto3_client != "ecr":
@@ -139,6 +138,7 @@ class StepImagesExistOnEcr(Validation):
         paginator = self.client.get_paginator("describe_images")
 
         uris = self.get_attribute(sagemaker_pipeline)
+        # return uris
         not_exist = []
         exist = []
         for uri in uris:
@@ -169,66 +169,3 @@ class StepImagesExistOnEcr(Validation):
                 subject=str(exist),
             )
         }
-
-
-class StepNetworkConfig(Validation):
-    """Validate NetworkConfig in Step.
-
-    Supported for ProcessingStep, TrainingStep. This validation is
-    useful when you want to ensure that the NetworkConfig of a Pipeline
-    Step's Processor is as expected.
-    """
-
-    def __init__(
-        self, network_config_expected: NetworkConfig, rule: Rule, step_name: Optional[str] = None
-    ) -> None:
-        """Initialize StepNetworkConfig validation."""
-        self.step_filter: str = f"name=={step_name}" if step_name else ""
-        super().__init__(
-            name="StepNetworkConfig",
-            paths=[
-                f".steps[{self.step_filter}].processor.network_config",
-            ],
-            rule=rule,
-        )
-        self.network_config_expected: NetworkConfig = network_config_expected
-
-    def run(
-        self,
-        sagemaker_pipeline: Pipeline,
-    ) -> Dict[str, ValidationResult]:
-        """Runs validation of NetworkConfigs on Pipeline.
-
-        :param sagemaker_pipeline: SageMaker Pipeline
-        :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
-        :return: Dict containing the validation result
-        :rtype: Dict[str, ValidationResult]
-        """
-        network_configs_observed = self.get_attribute(sagemaker_pipeline)
-
-        # Compatibility with TrainingStep
-        default_network_config = NetworkConfig()
-        training_step_estimators = [
-            step.estimator for step in sagemaker_pipeline.steps if isinstance(step, TrainingStep)
-        ]
-        for step in training_step_estimators:
-            step_dict = {}
-            for attr_name in default_network_config.__dict__.keys():
-                attr_value = getattr(step, attr_name)
-                step_dict[attr_name] = attr_value() if isfunction(attr_value) else attr_value
-        network_configs_observed.append(NetworkConfig(**step_dict))
-        # Converting objects to dicts to make it comparable
-        # Handling None values
-        network_configs_observed_dict = []
-        for nwc in network_configs_observed:
-            if nwc:
-                network_configs_observed_dict.append(nwc.__dict__)
-            else:
-                network_configs_observed_dict.append(None)
-        network_config_expected_dict = (
-            self.network_config_expected.__dict__
-            if self.network_config_expected
-            else self.network_config_expected
-        )
-        results = self.rule.run(network_configs_observed_dict, [network_config_expected_dict])
-        return {self.name: results}
