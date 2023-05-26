@@ -261,3 +261,73 @@ class StepNetworkConfig(Validation):
         )
         results = self.rule.run(network_configs_observed_dict, [network_config_expected_dict])
         return {self.name: results}
+
+
+class StepLambdaFunctionExists(Validation):
+    """Validate whether Lambda Function referenced in LambdaSteps exists."""
+
+    def __init__(
+        self,
+        boto3_client: Union["boto3.client('lambda')", str] = "lambda",  # noqa F821
+    ) -> None:
+        """Initialize StepLambdaFunctionArnExists validation.
+
+        :param boto3_client: Boto3 client to use for checking Lambda Function existence,
+        defaults to "lambda"
+        :type boto3_client: Union["boto3.client('lambda')", str], optional
+        :raises ValueError: boto3_client must be 'lambda'
+        :return: None
+        :rtype: None
+        """
+        if isinstance(boto3_client, str) and boto3_client != "lambda":
+            raise ValueError(f"boto3_client must be 'lambda', not {boto3_client}.")
+        if boto3_client:
+            self.client = (
+                boto3_client if not isinstance(boto3_client, str) else boto3.client(boto3_client)
+            )
+
+        super().__init__(
+            name="StepLambdaFunctionExists",
+            paths=[
+                ".steps[step_type/value==Lambda].lambda_func",
+            ],
+        )
+
+    def run(
+        self,
+        sagemaker_pipeline: Pipeline,
+    ) -> Dict[str, ValidationResult]:
+        """Runs validation of Parameters on Pipeline.
+
+        :param sagemaker_pipeline: SageMaker Pipeline
+        :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
+        :return: Dict containing the validation result
+        :rtype: Dict[str, ValidationResult]
+        """
+        lambda_func_observed = self.get_attribute(sagemaker_pipeline)
+        exist = []
+        not_exist = []
+        for func in lambda_func_observed:
+            try:
+                _ = self.client.get_function(
+                    FunctionName=func,
+                )
+                exist.append(func)
+            except ClientError:
+                not_exist.append(func)
+        if not_exist:
+            return {
+                self.name: ValidationResult(
+                    success=False,
+                    message=f"Lambda Function {not_exist} does not " f"exist.",
+                    subject=str(lambda_func_observed),
+                )
+            }
+        else:
+            return {
+                self.name: ValidationResult(
+                    success=True,
+                    message=f"Lambda Function {exist} exists.",
+                    subject=str(lambda_func_observed),
+                )
+            }

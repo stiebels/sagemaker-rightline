@@ -10,6 +10,7 @@ from sagemaker_rightline.validations import (
     PipelineParameters,
     StepImagesExistOnEcr,
     StepKmsKeyId,
+    StepLambdaFunctionExists,
     StepNetworkConfig,
 )
 from tests.fixtures.image_details import IMAGE_1_URI, IMAGE_2_URI
@@ -58,6 +59,7 @@ if __name__ == "__main__":
                     ),
                     rule=Equals(),
                 ),
+                StepLambdaFunctionExists(),
             ]
             cm = Configuration(
                 validations=validations,

@@ -37,6 +37,7 @@ The following `Validations` are currently implemented:
   - `StepImagesExistOnEcr`
   - `StepKmsKeyId`
   - `StepNetworkConfig`
+  - `StepLambdaFunctionExists`
 
 In most cases, a `Validation` subclass requires passing a `Rule` object to its constructor.
 
@@ -68,6 +69,7 @@ from sagemaker_rightline.validations import (
     StepImagesExistOnEcr,
     StepKmsKeyId,
     StepNetworkConfig,
+    StepLambdaFunctionExists,
 )
 
 # Import a dummy pipeline
@@ -98,7 +100,8 @@ validations = [
             subnets=["subnet-1234567890"],
         ),
         rule=Equals(),
-    )
+    ),
+    StepLambdaFunctionExists(),
 ]
 
 # Add Validations and SageMaker Pipeline to Configuration

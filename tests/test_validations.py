@@ -1,5 +1,5 @@
 import pytest
-from moto import mock_ecr
+from moto import mock_ecr, mock_iam, mock_lambda
 from sagemaker.processing import NetworkConfig
 from sagemaker.workflow.parameters import ParameterString
 
@@ -10,9 +10,14 @@ from sagemaker_rightline.validations import (
     PipelineParameters,
     StepImagesExistOnEcr,
     StepKmsKeyId,
+    StepLambdaFunctionExists,
     StepNetworkConfig,
 )
-from tests.fixtures.constants import TEST_ACCOUNT_ID, TEST_REGION_NAME
+from tests.fixtures.constants import (
+    TEST_ACCOUNT_ID,
+    TEST_LAMBDA_FUNC_NAME,
+    TEST_REGION_NAME,
+)
 from tests.fixtures.image_details import (
     IMAGE_1_REPOSITORY_NAME,
     IMAGE_1_TAG,
@@ -20,7 +25,7 @@ from tests.fixtures.image_details import (
     IMAGE_2_URI,
 )
 from tests.fixtures.pipeline import get_sagemaker_pipeline
-from tests.utils import create_image, ecr_client
+from tests.utils import create_image, create_lambda_function, ecr_client, lambda_client
 
 
 @pytest.fixture
@@ -277,3 +282,19 @@ def test_step_network_config_filter(
     )
     results = step_network_config.run(sagemaker_pipeline)[step_network_config.name]
     assert results.success == success
+
+
+@mock_iam
+@mock_lambda
+def test_lambda_function_exists_positive(lambda_client, sagemaker_pipeline) -> None:
+    with create_lambda_function(lambda_client, [TEST_LAMBDA_FUNC_NAME]):
+        lambda_function_exists = StepLambdaFunctionExists()
+        results = lambda_function_exists.run(sagemaker_pipeline)
+    assert results[lambda_function_exists.name].success
+
+
+@mock_lambda
+def test_lambda_function_exists_negative(lambda_client, sagemaker_pipeline) -> None:
+    lambda_function_exists = StepLambdaFunctionExists()
+    results = lambda_function_exists.run(sagemaker_pipeline)
+    assert not results[lambda_function_exists.name].success

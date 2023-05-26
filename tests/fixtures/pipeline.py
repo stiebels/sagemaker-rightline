@@ -1,6 +1,7 @@
 from sagemaker.processing import NetworkConfig, ScriptProcessor
 from sagemaker.sklearn.estimator import SKLearn
 from sagemaker.spark.processing import PySparkProcessor
+from sagemaker.workflow.lambda_step import LambdaStep
 from sagemaker.workflow.parameters import ParameterString
 from sagemaker.workflow.pipeline import Pipeline
 from sagemaker.workflow.steps import (
@@ -10,7 +11,7 @@ from sagemaker.workflow.steps import (
     TrainingStep,
 )
 
-from tests.fixtures.constants import TEST_ROLE_ARN
+from tests.fixtures.constants import TEST_LAMBDA_FUNC_NAME, TEST_ROLE_ARN
 from tests.fixtures.image_details import IMAGE_1_URI, IMAGE_2_URI
 
 
@@ -129,9 +130,20 @@ def get_sagemaker_pipeline(
         depends_on=[sm_processing_step_spark.name],
     )
 
+    sm_lambda_step = LambdaStep(
+        name="sm_lambda_step",
+        lambda_func=TEST_LAMBDA_FUNC_NAME,
+        depends_on=[sm_training_step_sklearn.name],
+    )
+
     sm_pipeline = Pipeline(
         name="dummy-pipeline",
-        steps=[sm_processing_step_sklearn, sm_processing_step_spark, sm_training_step_sklearn],
+        steps=[
+            sm_processing_step_sklearn,
+            sm_processing_step_spark,
+            sm_training_step_sklearn,
+            sm_lambda_step,
+        ],
         parameters=[
             ParameterString(
                 name="parameter-1",

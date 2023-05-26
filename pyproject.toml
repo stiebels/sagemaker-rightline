@@ -17,7 +17,7 @@ sagemaker = "^2.159.0"
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-moto = "^4.1.10"
+moto = {extras = ["all"], version = "^4.1.10"}
 pytest = "^7.3.1"
 pytest-cov = "^4.0.0"
 pyproject-flake8 = "^6.0.0.post1"
