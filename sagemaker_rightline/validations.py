@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Union
 
 import boto3
 from botocore.exceptions import ClientError
+from sagemaker.estimator import Estimator
 from sagemaker.processing import NetworkConfig
 from sagemaker.workflow.parameters import Parameter
 from sagemaker.workflow.pipeline import Pipeline
@@ -194,6 +195,33 @@ class StepNetworkConfig(Validation):
         )
         self.network_config_expected: NetworkConfig = network_config_expected
 
+    @staticmethod
+    def get_training_step_network_config(
+        training_step_estimators: List[Estimator],
+    ) -> List[NetworkConfig]:
+        """Get NetworkConfig of each training step estimator.
+
+        :param training_step_estimators: List of training step estimators
+        :type training_step_estimators: List[Estimator]
+        :return: List of NetworkConfig of each training step estimator
+        :rtype: List[NetworkConfig]
+        """
+        default_network_config = NetworkConfig()
+        training_step_network_configs = []
+        for step in training_step_estimators:
+            step_dict = {}
+            for attr_name in default_network_config.__dict__.keys():
+                attr_value = getattr(step, attr_name)
+                # Some attributes of NetworkConfig are callable and return the value,
+                # so we need to call them
+                step_dict[attr_name] = (
+                    attr_value
+                    if any([isinstance(attr_value, bool), isinstance(attr_value, list)])
+                    else attr_value()
+                )
+            training_step_network_configs.append(NetworkConfig(**step_dict))
+        return training_step_network_configs
+
     def run(
         self,
         sagemaker_pipeline: Pipeline,
@@ -207,27 +235,17 @@ class StepNetworkConfig(Validation):
         """
         network_configs_observed = self.get_attribute(sagemaker_pipeline)
 
-        # Compatibility with TrainingStep
+        # Compatibility with TrainingStep, which does not have a NetworkConfig object
+        # as attribute, but takes the attributes of NetworkConfig as individual arguments.
         training_step_estimators = [
             step.estimator
             for step in sagemaker_pipeline.steps
             if step.step_type.value == "Training"
         ]
         if training_step_estimators:
-            default_network_config = NetworkConfig()
-            step_dict = {}
-            for step in training_step_estimators:
-                step_dict = {}
-                for attr_name in default_network_config.__dict__.keys():
-                    attr_value = getattr(step, attr_name)
-                    # Some attributes of NetworkConfig are callable and return the value,
-                    # so we need to call them
-                    step_dict[attr_name] = (
-                        attr_value
-                        if any([isinstance(attr_value, bool), isinstance(attr_value, list)])
-                        else attr_value()
-                    )
-            network_configs_observed.append(NetworkConfig(**step_dict))
+            network_configs_observed += StepNetworkConfig.get_training_step_network_config(
+                training_step_estimators
+            )
 
         network_configs_observed_dict = []
         for nwc in network_configs_observed:
