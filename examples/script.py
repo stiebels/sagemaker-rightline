@@ -1,5 +1,6 @@
 import boto3
 from moto import mock_ecr
+from sagemaker.processing import NetworkConfig
 from sagemaker.workflow.parameters import ParameterString
 
 from sagemaker_rightline.model import Configuration
@@ -9,6 +10,7 @@ from sagemaker_rightline.validations import (
     PipelineParameters,
     StepImagesExistOnEcr,
     StepKmsKeyId,
+    StepNetworkConfig,
 )
 from tests.fixtures.image_details import IMAGE_1_URI, IMAGE_2_URI
 from tests.fixtures.pipeline import get_sagemaker_pipeline
@@ -44,8 +46,16 @@ if __name__ == "__main__":
                 ),
                 StepKmsKeyId(
                     kms_key_id_expected="some/kms-key-alias",
-                    step_name="sm_processing_step_sklearn",
-                    # optional: if not set, will check all steps [applies to all Step* validations]
+                    step_name="sm_training_step_sklearn",
+                    # optional: if not set, will check all steps [applies to all Step* validations
+                    rule=Equals(),
+                ),
+                StepNetworkConfig(
+                    network_config_expected=NetworkConfig(
+                        enable_network_isolation=False,
+                        security_group_ids=["sg-1234567890"],
+                        subnets=["subnet-1234567890"],
+                    ),
                     rule=Equals(),
                 ),
             ]

@@ -27,9 +27,10 @@ The `Configuration` class is instantiated with a
 A `Validation` is a class that inherits from the `Validation` base class.
 It is responsible for validating a single property of the `Pipeline` object.
 We differentiate between `Validations` that check the `Pipeline` object itself (class names beginning with "Pipeline") and `Validations` that check the `Pipeline` object's `Step` objects (class name starting with "Step").
+Depending on the specific `Validation`, a different set of `StepTypEnums` may be supported.
 
-For example, the `StepImagesExistOnEcr` validation checks that all ImageURI that
-Steps of the `Pipeline` object reference indeed exist on the target ECR.
+For example, the `StepImagesExistOnEcr` supports `Processing` and `Training` steps. It's a validation checks that all ImageURI that
+Steps of the named types of the `Pipeline` object reference indeed exist on the target ECR.
 
 The following `Validations` are currently implemented:
   - `PipelineParameters`
@@ -87,7 +88,7 @@ validations = [
     ),
     StepKmsKeyId(
         kms_key_id_expected="some/kms-key-alias",
-        step_name="output-1",  # optional: if not set, will check all steps
+        step_name="sm_training_step_sklearn",  # optional: if not set, will check all steps
         rule=Equals(),
     ),
     StepNetworkConfig(

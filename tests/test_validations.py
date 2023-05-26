@@ -1,5 +1,6 @@
 import pytest
 from moto import mock_ecr
+from sagemaker.processing import NetworkConfig
 from sagemaker.workflow.parameters import ParameterString
 
 from sagemaker_rightline.model import Validation, ValidationResult
@@ -9,6 +10,7 @@ from sagemaker_rightline.validations import (
     PipelineParameters,
     StepImagesExistOnEcr,
     StepKmsKeyId,
+    StepNetworkConfig,
 )
 from tests.fixtures.constants import TEST_ACCOUNT_ID, TEST_REGION_NAME
 from tests.fixtures.image_details import (
@@ -208,3 +210,60 @@ def test_get_filtered_attributes_steps(sagemaker_pipeline) -> None:
     )
     assert len(steps) == 1
     assert steps[0].name == "sm_processing_step_sklearn"
+
+
+def test_step_network_config(
+    sagemaker_pipeline,
+) -> None:
+    network_config_expected = NetworkConfig(
+        enable_network_isolation=True,
+        security_group_ids=["sg-12345"],
+        subnets=["subnet-12345"],
+        encrypt_inter_container_traffic=True,
+    )
+    step_network_config = StepNetworkConfig(
+        network_config_expected=network_config_expected,
+        rule=Equals(),
+    )
+    results = step_network_config.run(sagemaker_pipeline)[step_network_config.name]
+    assert not results.success
+
+
+@pytest.mark.parametrize(
+    "network_config_expected,success,step_name",
+    [
+        [
+            NetworkConfig(
+                enable_network_isolation=True,
+                security_group_ids=["sg-12345"],
+                subnets=["subnet-12345"],
+                encrypt_inter_container_traffic=True,
+            ),
+            True,
+            "sm_processing_step_sklearn",
+        ],
+        [
+            NetworkConfig(
+                enable_network_isolation=True,
+                security_group_ids=["sg-12345"],
+                subnets=["other-subnet"],
+                encrypt_inter_container_traffic=False,
+            ),
+            False,
+            "sm_processing_step_sklearn",
+        ],
+        [NetworkConfig(), False, "sm_processing_step_sklearn"],
+        [None, False, "sm_processing_step_sklearn"],
+        [NetworkConfig(), False, "sm_processing_step_spark"],
+    ],
+)
+def test_step_network_config_filter(
+    network_config_expected, success, step_name, sagemaker_pipeline
+) -> None:
+    step_network_config = StepNetworkConfig(
+        network_config_expected=network_config_expected,
+        rule=Equals(),
+        step_name=step_name,
+    )
+    results = step_network_config.run(sagemaker_pipeline)[step_network_config.name]
+    assert results.success == success
