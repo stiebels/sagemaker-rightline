@@ -141,4 +141,8 @@ def test_validation_get_attribute_no_filter(sagemaker_pipeline) -> None:
     assert validation.get_attribute(sagemaker_pipeline) == [
         kms_key_alias_expected,
         kms_key_alias_expected,
+        kms_key_alias_expected,
     ]
+
+    validation = StepImagesExistOnEcr()
+    assert validation.get_attribute(sagemaker_pipeline) == [IMAGE_1_URI, IMAGE_2_URI, IMAGE_1_URI]

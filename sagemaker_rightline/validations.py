@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Union
 
 import boto3
 from botocore.exceptions import ClientError
+from sagemaker.estimator import Estimator
 from sagemaker.processing import NetworkConfig
 from sagemaker.workflow.parameters import Parameter
 from sagemaker.workflow.pipeline import Pipeline
@@ -22,7 +23,7 @@ class PipelineParameters(Validation):
         self, parameters_expected: List[Parameter], rule: Rule, ignore_default_value: bool = False
     ) -> None:
         """Validate Pipeline Parameters."""
-        super().__init__(name="PipelineParameters", path=".parameters[]", rule=rule)
+        super().__init__(name="PipelineParameters", paths=[".parameters[]"], rule=rule)
         if not parameters_expected:
             raise ValueError("parameters_expected cannot be empty.")
         self.parameters_expected: List[Parameter] = parameters_expected
@@ -45,10 +46,11 @@ class PipelineParameters(Validation):
 
 
 class StepKmsKeyId(Validation):
-    """Validate KmsKeyId in Step.
+    """Validate KmsKeyId or output_kms_key in Step.
 
+    Supported only for ProcessingStep and TrainingStep (output_kms_key).
     This validation is useful when you want to ensure that the KmsKeyId
-    of a Pipeline Step is as expected.
+    or output_kms_key of a Pipeline Step is as expected.
     """
 
     def __init__(
@@ -56,7 +58,14 @@ class StepKmsKeyId(Validation):
     ) -> None:
         """Initialize StepKmsKeyId validation."""
         self.step_filter: str = f"name=={step_name}" if step_name else ""
-        super().__init__(name="StepKmsKeyId", path=f".steps[{self.step_filter}].kms_key", rule=rule)
+        super().__init__(
+            name="StepKmsKeyId",
+            paths=[
+                f".steps[{self.step_filter} && step_type/value==Processing].kms_key",
+                f".steps[{self.step_filter} && step_type/value==Training].estimator.output_kms_key",
+            ],
+            rule=rule,
+        )
         self.kms_key_id_expected: str = kms_key_id_expected
 
     def run(
@@ -90,16 +99,24 @@ class ContainerImage:
 
 
 class StepImagesExistOnEcr(Validation):
-    """Check if container images exist in ECR."""
+    """Check if container images exist in ECR.
+
+    Supported only for ProcessingStep and TrainingStep.
+    """
 
     def __init__(
         self,
-        boto3_client: Union["boto3.client('ecr')", str] = "ecr",  # noqa: F821
+        boto3_client: Union["boto3.client('ecr')", str] = "ecr",  # noqa F821
+        step_name: Optional[str] = None,
     ) -> None:
         """Initialize ImageExists validation."""
+        self.step_filter: str = f"name=={step_name}" if step_name else ""
         super().__init__(
             name="StepImagesExistOnEcr",
-            path=".steps[].processor.image_uri",
+            paths=[
+                f".steps[{self.step_filter} && step_type/value==Processing].processor.image_uri",
+                f".steps[{self.step_filter} && step_type/value==Training].estimator.image_uri",
+            ],
         )
         if isinstance(boto3_client, str) and boto3_client != "ecr":
             raise ValueError(f"boto3_client must be 'ecr', not {boto3_client}.")
@@ -123,6 +140,7 @@ class StepImagesExistOnEcr(Validation):
         paginator = self.client.get_paginator("describe_images")
 
         uris = self.get_attribute(sagemaker_pipeline)
+        # return uris
         not_exist = []
         exist = []
         for uri in uris:
@@ -158,8 +176,9 @@ class StepImagesExistOnEcr(Validation):
 class StepNetworkConfig(Validation):
     """Validate NetworkConfig in Step.
 
-    This validation is useful when you want to ensure that the
-    NetworkConfig of a Pipeline Step's Processor is as expected.
+    This Validation currently supports only ProcessingStep. This
+    validation is useful when you want to ensure that the NetworkConfig
+    of a Pipeline Step's Processor is as expected.
     """
 
     def __init__(
@@ -169,10 +188,39 @@ class StepNetworkConfig(Validation):
         self.step_filter: str = f"name=={step_name}" if step_name else ""
         super().__init__(
             name="StepNetworkConfig",
-            path=f".steps[{self.step_filter}].processor.network_config",
+            paths=[
+                f".steps[{self.step_filter}].processor.network_config",
+            ],
             rule=rule,
         )
         self.network_config_expected: NetworkConfig = network_config_expected
+
+    @staticmethod
+    def get_training_step_network_config(
+        training_step_estimators: List[Estimator],
+    ) -> List[NetworkConfig]:
+        """Get NetworkConfig of each training step estimator.
+
+        :param training_step_estimators: List of training step estimators
+        :type training_step_estimators: List[Estimator]
+        :return: List of NetworkConfig of each training step estimator
+        :rtype: List[NetworkConfig]
+        """
+        default_network_config = NetworkConfig()
+        training_step_network_configs = []
+        for step in training_step_estimators:
+            step_dict = {}
+            for attr_name in default_network_config.__dict__.keys():
+                attr_value = getattr(step, attr_name)
+                # Some attributes of NetworkConfig are callable and return the value,
+                # so we need to call them
+                step_dict[attr_name] = (
+                    attr_value
+                    if any([isinstance(attr_value, bool), isinstance(attr_value, list)])
+                    else attr_value()
+                )
+            training_step_network_configs.append(NetworkConfig(**step_dict))
+        return training_step_network_configs
 
     def run(
         self,
@@ -186,8 +234,20 @@ class StepNetworkConfig(Validation):
         :rtype: Dict[str, ValidationResult]
         """
         network_configs_observed = self.get_attribute(sagemaker_pipeline)
-        # Converting objects to dicts to make it comparable
-        # Handling None values
+
+        # Compatibility with TrainingStep, which does not have a NetworkConfig object
+        # as attribute, but takes the attributes of NetworkConfig as individual arguments.
+        training_step_estimators = [
+            step.estimator
+            for step in sagemaker_pipeline.steps
+            if step.step_type.value == "Training"
+            and step.name == self.step_filter.replace("name==", "")
+        ]
+        if training_step_estimators:
+            network_configs_observed += StepNetworkConfig.get_training_step_network_config(
+                training_step_estimators
+            )
+
         network_configs_observed_dict = []
         for nwc in network_configs_observed:
             if nwc:

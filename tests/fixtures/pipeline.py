@@ -1,8 +1,14 @@
 from sagemaker.processing import NetworkConfig, ScriptProcessor
+from sagemaker.sklearn.estimator import SKLearn
 from sagemaker.spark.processing import PySparkProcessor
 from sagemaker.workflow.parameters import ParameterString
 from sagemaker.workflow.pipeline import Pipeline
-from sagemaker.workflow.steps import ProcessingInput, ProcessingOutput, ProcessingStep
+from sagemaker.workflow.steps import (
+    ProcessingInput,
+    ProcessingOutput,
+    ProcessingStep,
+    TrainingStep,
+)
 
 from tests.fixtures.constants import TEST_ROLE_ARN
 from tests.fixtures.image_details import IMAGE_1_URI, IMAGE_2_URI
@@ -15,16 +21,18 @@ def arn_formatter(_type: str, _id: str, account_id: str, region_name: str) -> st
 def get_sagemaker_pipeline(
     script_path: str = "tests/fixtures/fake_processing_script.py",
 ) -> Pipeline:
+    network_config = NetworkConfig(
+        enable_network_isolation=True,
+        security_group_ids=["sg-12345"],
+        subnets=["subnet-12345"],
+        encrypt_inter_container_traffic=True,
+    )
+
     sm_processor_sklearn = ScriptProcessor(
         base_job_name="sm_processor",
         role=TEST_ROLE_ARN,
         image_uri=IMAGE_1_URI,
-        network_config=NetworkConfig(
-            enable_network_isolation=True,
-            security_group_ids=["sg-12345"],
-            subnets=["subnet-12345"],
-            encrypt_inter_container_traffic=True,
-        ),
+        network_config=network_config,
     )
     sm_processor_spark = PySparkProcessor(
         base_job_name="sm_processors",
@@ -32,7 +40,20 @@ def get_sagemaker_pipeline(
         image_uri=IMAGE_2_URI,
         instance_type="ml.m5.xlarge",
         instance_count=2,
+        network_config=network_config,
     )
+    sm_trainer_sklearn = SKLearn(
+        entry_point=script_path,
+        role=TEST_ROLE_ARN,
+        image_uri=IMAGE_1_URI,
+        instance_type="ml.c4.xlarge",
+        output_kms_key="some/kms-key-alias",
+        enable_network_isolation=network_config.enable_network_isolation,
+        security_group_ids=network_config.security_group_ids,
+        subnets=network_config.subnets,
+        encrypt_inter_container_traffic=network_config.encrypt_inter_container_traffic,
+    )
+
     dummy_bucket = "dummy-bucket"
 
     sm_processing_step_sklearn = ProcessingStep(
@@ -98,9 +119,19 @@ def get_sagemaker_pipeline(
         depends_on=[sm_processing_step_sklearn.name],
     )
 
+    sm_training_step_sklearn = TrainingStep(
+        name="sm_training_step_sklearn",
+        estimator=sm_trainer_sklearn,
+        inputs={
+            "train": f"s3://{dummy_bucket}/output-3",
+            "test": f"s3://{dummy_bucket}/output-4",
+        },
+        depends_on=[sm_processing_step_spark.name],
+    )
+
     sm_pipeline = Pipeline(
         name="dummy-pipeline",
-        steps=[sm_processing_step_sklearn, sm_processing_step_spark],
+        steps=[sm_processing_step_sklearn, sm_processing_step_spark, sm_training_step_sklearn],
         parameters=[
             ParameterString(
                 name="parameter-1",

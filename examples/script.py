@@ -46,7 +46,7 @@ if __name__ == "__main__":
                 ),
                 StepKmsKeyId(
                     kms_key_id_expected="some/kms-key-alias",
-                    step_name="output-1",
+                    step_name="sm_training_step_sklearn",
                     # optional: if not set, will check all steps [applies to all Step* validations
                     rule=Equals(),
                 ),

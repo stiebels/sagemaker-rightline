@@ -3,7 +3,7 @@ from moto import mock_ecr
 from sagemaker.processing import NetworkConfig
 from sagemaker.workflow.parameters import ParameterString
 
-from sagemaker_rightline.model import ValidationResult
+from sagemaker_rightline.model import Validation, ValidationResult
 from sagemaker_rightline.rules import Equals
 from sagemaker_rightline.validations import (
     ContainerImage,
@@ -203,6 +203,15 @@ def test_step_kms_key_id_no_filter(kms_key_id_expected, success, sagemaker_pipel
     assert results.success == success
 
 
+def test_get_filtered_attributes_steps(sagemaker_pipeline) -> None:
+    steps = Validation.get_filtered_attributes(
+        filter_subject=sagemaker_pipeline.steps,
+        path=".steps[name==sm_processing_step_sklearn && step_type.value==Processing].kms_key",
+    )
+    assert len(steps) == 1
+    assert steps[0].name == "sm_processing_step_sklearn"
+
+
 def test_step_network_config(
     sagemaker_pipeline,
 ) -> None:
@@ -245,8 +254,17 @@ def test_step_network_config(
         ],
         [NetworkConfig(), False, "sm_processing_step_sklearn"],
         [None, False, "sm_processing_step_sklearn"],
-        [None, True, "sm_processing_step_spark"],
         [NetworkConfig(), False, "sm_processing_step_spark"],
+        [
+            NetworkConfig(
+                enable_network_isolation=True,
+                security_group_ids=["sg-12345"],
+                subnets=["subnet-12345"],
+                encrypt_inter_container_traffic=True,
+            ),
+            True,
+            "sm_training_step_sklearn",
+        ],
     ],
 )
 def test_step_network_config_filter(
