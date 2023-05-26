@@ -241,6 +241,7 @@ class StepNetworkConfig(Validation):
             step.estimator
             for step in sagemaker_pipeline.steps
             if step.step_type.value == "Training"
+            and step.name == self.step_filter.replace("name==", "")
         ]
         if training_step_estimators:
             network_configs_observed += StepNetworkConfig.get_training_step_network_config(

@@ -232,29 +232,29 @@ def test_step_network_config(
 @pytest.mark.parametrize(
     "network_config_expected,success,step_name",
     [
-        # [
-        #     NetworkConfig(
-        #         enable_network_isolation=True,
-        #         security_group_ids=["sg-12345"],
-        #         subnets=["subnet-12345"],
-        #         encrypt_inter_container_traffic=True,
-        #     ),
-        #     True,
-        #     "sm_processing_step_sklearn",
-        # ],
-        # [
-        #     NetworkConfig(
-        #         enable_network_isolation=True,
-        #         security_group_ids=["sg-12345"],
-        #         subnets=["other-subnet"],
-        #         encrypt_inter_container_traffic=False,
-        #     ),
-        #     False,
-        #     "sm_processing_step_sklearn",
-        # ],
-        # [NetworkConfig(), False, "sm_processing_step_sklearn"],
-        # [None, False, "sm_processing_step_sklearn"],
-        # [NetworkConfig(), False, "sm_processing_step_spark"],
+        [
+            NetworkConfig(
+                enable_network_isolation=True,
+                security_group_ids=["sg-12345"],
+                subnets=["subnet-12345"],
+                encrypt_inter_container_traffic=True,
+            ),
+            True,
+            "sm_processing_step_sklearn",
+        ],
+        [
+            NetworkConfig(
+                enable_network_isolation=True,
+                security_group_ids=["sg-12345"],
+                subnets=["other-subnet"],
+                encrypt_inter_container_traffic=False,
+            ),
+            False,
+            "sm_processing_step_sklearn",
+        ],
+        [NetworkConfig(), False, "sm_processing_step_sklearn"],
+        [None, False, "sm_processing_step_sklearn"],
+        [NetworkConfig(), False, "sm_processing_step_spark"],
         [
             NetworkConfig(
                 enable_network_isolation=True,
