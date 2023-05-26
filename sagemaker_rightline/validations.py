@@ -206,8 +206,29 @@ class StepNetworkConfig(Validation):
         :rtype: Dict[str, ValidationResult]
         """
         network_configs_observed = self.get_attribute(sagemaker_pipeline)
-        # Converting objects to dicts to make it comparable
-        # Handling None values
+
+        # Compatibility with TrainingStep
+        training_step_estimators = [
+            step.estimator
+            for step in sagemaker_pipeline.steps
+            if step.step_type.value == "Training"
+        ]
+        if training_step_estimators:
+            default_network_config = NetworkConfig()
+            step_dict = {}
+            for step in training_step_estimators:
+                step_dict = {}
+                for attr_name in default_network_config.__dict__.keys():
+                    attr_value = getattr(step, attr_name)
+                    # Some attributes of NetworkConfig are callable and return the value,
+                    # so we need to call them
+                    step_dict[attr_name] = (
+                        attr_value
+                        if any([isinstance(attr_value, bool), isinstance(attr_value, list)])
+                        else attr_value()
+                    )
+            network_configs_observed.append(NetworkConfig(**step_dict))
+
         network_configs_observed_dict = []
         for nwc in network_configs_observed:
             if nwc:
