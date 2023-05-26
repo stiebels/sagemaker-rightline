@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+from inspect import isfunction
 from typing import Dict, List, Optional, Union
 
 import boto3
@@ -7,6 +8,7 @@ from botocore.exceptions import ClientError
 from sagemaker.processing import NetworkConfig
 from sagemaker.workflow.parameters import Parameter
 from sagemaker.workflow.pipeline import Pipeline
+from sagemaker.workflow.steps import TrainingStep
 
 from sagemaker_rightline.model import Rule, Validation, ValidationResult
 
@@ -45,11 +47,11 @@ class PipelineParameters(Validation):
 
 
 class StepKmsKeyId(Validation):
-    """Validate KmsKeyId in Step.
+    """Validate KmsKeyId or output_kms_key in Step.
 
-    Supported only for ProcessingStep. This validation is useful when
-    you want to ensure that the KmsKeyId of a Pipeline Step is as
-    expected.
+    Supported only for ProcessingStep and TrainingStep (output_kms_key).
+    This validation is useful when you want to ensure that the KmsKeyId
+    or output_kms_key of a Pipeline Step is as expected.
     """
 
     def __init__(
@@ -100,7 +102,7 @@ class ContainerImage:
 class StepImagesExistOnEcr(Validation):
     """Check if container images exist in ECR.
 
-    Supported only for ProcessingStep.
+    Supported only for ProcessingStep and TrainingStep.
     """
 
     def __init__(
@@ -172,9 +174,9 @@ class StepImagesExistOnEcr(Validation):
 class StepNetworkConfig(Validation):
     """Validate NetworkConfig in Step.
 
-    Supported only for ProcessingStep. This validation is useful when
-    you want to ensure that the NetworkConfig of a Pipeline Step's
-    Processor is as expected.
+    Supported for ProcessingStep, TrainingStep. This validation is
+    useful when you want to ensure that the NetworkConfig of a Pipeline
+    Step's Processor is as expected.
     """
 
     def __init__(
@@ -203,6 +205,18 @@ class StepNetworkConfig(Validation):
         :rtype: Dict[str, ValidationResult]
         """
         network_configs_observed = self.get_attribute(sagemaker_pipeline)
+
+        # Compatibility with TrainingStep
+        default_network_config = NetworkConfig()
+        training_step_estimators = [
+            step.estimator for step in sagemaker_pipeline.steps if isinstance(step, TrainingStep)
+        ]
+        for step in training_step_estimators:
+            step_dict = {}
+            for attr_name in default_network_config.__dict__.keys():
+                attr_value = getattr(step, attr_name)
+                step_dict[attr_name] = attr_value() if isfunction(attr_value) else attr_value
+        network_configs_observed.append(NetworkConfig(**step_dict))
         # Converting objects to dicts to make it comparable
         # Handling None values
         network_configs_observed_dict = []

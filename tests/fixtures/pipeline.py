@@ -40,7 +40,20 @@ def get_sagemaker_pipeline(
         image_uri=IMAGE_2_URI,
         instance_type="ml.m5.xlarge",
         instance_count=2,
+        network_config=network_config,
     )
+    sm_trainer_sklearn = SKLearn(
+        entry_point=script_path,
+        role=TEST_ROLE_ARN,
+        image_uri=IMAGE_1_URI,
+        instance_type="ml.c4.xlarge",
+        output_kms_key="some/kms-key-alias",
+        enable_network_isolation=network_config.enable_network_isolation,
+        security_group_ids=network_config.security_group_ids,
+        subnets=network_config.subnets,
+        encrypt_inter_container_traffic=network_config.encrypt_inter_container_traffic,
+    )
+
     dummy_bucket = "dummy-bucket"
 
     sm_processing_step_sklearn = ProcessingStep(
@@ -106,17 +119,6 @@ def get_sagemaker_pipeline(
         depends_on=[sm_processing_step_sklearn.name],
     )
 
-    sm_trainer_sklearn = SKLearn(
-        entry_point=script_path,
-        role=TEST_ROLE_ARN,
-        image_uri=IMAGE_1_URI,
-        instance_type="ml.c4.xlarge",
-        output_kms_key="some/training-kms-key-alias",
-        enable_network_isolation=network_config.enable_network_isolation,
-        security_group_ids=network_config.security_group_ids,
-        subnets=network_config.subnets,
-        encrypt_inter_container_traffic=network_config.encrypt_inter_container_traffic,
-    )
     sm_training_step_sklearn = TrainingStep(
         name="sm_training_step_sklearn",
         estimator=sm_trainer_sklearn,

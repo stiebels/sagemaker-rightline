@@ -245,7 +245,7 @@ def test_step_network_config(
         ],
         [NetworkConfig(), False, "sm_processing_step_sklearn"],
         [None, False, "sm_processing_step_sklearn"],
-        [None, True, "sm_processing_step_spark"],
+        [None, False, "sm_processing_step_spark"],
         [NetworkConfig(), False, "sm_processing_step_spark"],
     ],
 )

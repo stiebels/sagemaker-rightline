@@ -35,6 +35,17 @@ class Validation(ABC):
     """Abstract class for validations."""
 
     def __init__(self, paths: List[str], name: str, rule: Optional[Rule] = None) -> None:
+        """Initialize a Validation object.
+
+        :param paths: list of paths to the attributes to be validated
+        :type paths: List[str]
+        :param name: name of the validation
+        :type name: str
+        :param rule: rule to be applied to the validation, defaults to None
+        :type rule: Optional[Rule]
+        :return:
+        :rtype:
+        """
         self.paths: List[str] = paths
         self.name: str = name
         self.rule: Rule = rule
@@ -52,7 +63,6 @@ class Validation(ABC):
         """
         # TODO: refactor
         result = []
-        used_filter_values = set()
         for path in self.paths:
             attr_path = path.split(".")[1:]
             sm_pipeline_copy = copy(sagemaker_pipeline)
@@ -62,15 +72,15 @@ class Validation(ABC):
                     raw_attr = attr.split("[")[0]
                     sm_pipeline_copy = getattr(sm_pipeline_copy, raw_attr)
                     if has_filter_dict:
+                        # step_name filtering
                         filter_dict = re.search("\[(.*?)\]", attr).group(1)  # noqa: W605
                         filter_key, filter_value = filter_dict.split("==")
-                        used_filter_values.add(filter_value)
+                        filtered_attrs = []
                         for ix, sub_attr in enumerate(sm_pipeline_copy):
-                            if (
-                                getattr(sub_attr, filter_key) != filter_value
-                                or filter_value in used_filter_values
-                            ):
-                                sm_pipeline_copy.pop(ix)
+                            if getattr(sub_attr, filter_key) == filter_value:
+                                filtered_attrs.append(sub_attr)
+                        sm_pipeline_copy = filtered_attrs
+
                 else:
                     sm_pipeline_copy = [
                         getattr(sub_attr, attr)
