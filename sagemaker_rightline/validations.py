@@ -22,7 +22,7 @@ class PipelineParameters(Validation):
         self, parameters_expected: List[Parameter], rule: Rule, ignore_default_value: bool = False
     ) -> None:
         """Validate Pipeline Parameters."""
-        super().__init__(name="PipelineParameters", path=".parameters[]", rule=rule)
+        super().__init__(name="PipelineParameters", paths=[".parameters[]"], rule=rule)
         if not parameters_expected:
             raise ValueError("parameters_expected cannot be empty.")
         self.parameters_expected: List[Parameter] = parameters_expected
@@ -47,8 +47,9 @@ class PipelineParameters(Validation):
 class StepKmsKeyId(Validation):
     """Validate KmsKeyId in Step.
 
-    This validation is useful when you want to ensure that the KmsKeyId
-    of a Pipeline Step is as expected.
+    Supported only for ProcessingStep. This validation is useful when
+    you want to ensure that the KmsKeyId of a Pipeline Step is as
+    expected.
     """
 
     def __init__(
@@ -56,7 +57,14 @@ class StepKmsKeyId(Validation):
     ) -> None:
         """Initialize StepKmsKeyId validation."""
         self.step_filter: str = f"name=={step_name}" if step_name else ""
-        super().__init__(name="StepKmsKeyId", path=f".steps[{self.step_filter}].kms_key", rule=rule)
+        super().__init__(
+            name="StepKmsKeyId",
+            paths=[
+                f".steps[{self.step_filter}].kms_key",
+                f".steps[{self.step_filter}].estimator.output_kms_key",
+            ],
+            rule=rule,
+        )
         self.kms_key_id_expected: str = kms_key_id_expected
 
     def run(
@@ -90,7 +98,10 @@ class ContainerImage:
 
 
 class StepImagesExistOnEcr(Validation):
-    """Check if container images exist in ECR."""
+    """Check if container images exist in ECR.
+
+    Supported only for ProcessingStep.
+    """
 
     def __init__(
         self,
@@ -99,7 +110,10 @@ class StepImagesExistOnEcr(Validation):
         """Initialize ImageExists validation."""
         super().__init__(
             name="StepImagesExistOnEcr",
-            path=".steps[].processor.image_uri",
+            paths=[
+                ".steps[].processor.image_uri",
+                ".steps[].estimator.image_uri",
+            ],
         )
         if isinstance(boto3_client, str) and boto3_client != "ecr":
             raise ValueError(f"boto3_client must be 'ecr', not {boto3_client}.")
@@ -158,8 +172,9 @@ class StepImagesExistOnEcr(Validation):
 class StepNetworkConfig(Validation):
     """Validate NetworkConfig in Step.
 
-    This validation is useful when you want to ensure that the
-    NetworkConfig of a Pipeline Step's Processor is as expected.
+    Supported only for ProcessingStep. This validation is useful when
+    you want to ensure that the NetworkConfig of a Pipeline Step's
+    Processor is as expected.
     """
 
     def __init__(
@@ -169,7 +184,9 @@ class StepNetworkConfig(Validation):
         self.step_filter: str = f"name=={step_name}" if step_name else ""
         super().__init__(
             name="StepNetworkConfig",
-            path=f".steps[{self.step_filter}].processor.network_config",
+            paths=[
+                f".steps[{self.step_filter}].processor.network_config",
+            ],
             rule=rule,
         )
         self.network_config_expected: NetworkConfig = network_config_expected

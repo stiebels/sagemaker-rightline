@@ -34,8 +34,8 @@ class Rule(ABC):
 class Validation(ABC):
     """Abstract class for validations."""
 
-    def __init__(self, path: str, name: str, rule: Optional[Rule] = None) -> None:
-        self.path: str = path
+    def __init__(self, paths: List[str], name: str, rule: Optional[Rule] = None) -> None:
+        self.paths: List[str] = paths
         self.name: str = name
         self.rule: Rule = rule
 
@@ -51,22 +51,34 @@ class Validation(ABC):
         :rtype: List
         """
         # TODO: refactor
-        attr_path = self.path.split(".")[1:]
-        sm_pipeline_copy = copy(sagemaker_pipeline)
-        for attr in attr_path:
-            if attr.endswith("]"):
-                has_filter_dict = attr[-2] != "["
-                raw_attr = attr.split("[")[0]
-                sm_pipeline_copy = getattr(sm_pipeline_copy, raw_attr)
-                if has_filter_dict:
-                    filter_dict = re.search("\[(.*?)\]", attr).group(1)  # noqa: W605
-                    filter_key, filter_value = filter_dict.split("==")
-                    for ix, sub_attr in enumerate(sm_pipeline_copy):
-                        if getattr(sub_attr, filter_key) != filter_value:
-                            sm_pipeline_copy.pop(ix)
-            else:
-                sm_pipeline_copy = [getattr(sub_attr, attr) for sub_attr in sm_pipeline_copy]
-        return sm_pipeline_copy
+        result = []
+        used_filter_values = set()
+        for path in self.paths:
+            attr_path = path.split(".")[1:]
+            sm_pipeline_copy = copy(sagemaker_pipeline)
+            for attr in attr_path:
+                if attr.endswith("]"):
+                    has_filter_dict = attr[-2] != "["
+                    raw_attr = attr.split("[")[0]
+                    sm_pipeline_copy = getattr(sm_pipeline_copy, raw_attr)
+                    if has_filter_dict:
+                        filter_dict = re.search("\[(.*?)\]", attr).group(1)  # noqa: W605
+                        filter_key, filter_value = filter_dict.split("==")
+                        used_filter_values.add(filter_value)
+                        for ix, sub_attr in enumerate(sm_pipeline_copy):
+                            if (
+                                getattr(sub_attr, filter_key) != filter_value
+                                or filter_value in used_filter_values
+                            ):
+                                sm_pipeline_copy.pop(ix)
+                else:
+                    sm_pipeline_copy = [
+                        getattr(sub_attr, attr)
+                        for sub_attr in sm_pipeline_copy
+                        if hasattr(sub_attr, attr)
+                    ]
+            result.append(sm_pipeline_copy)
+        return [x for y in result for x in y]
 
     @abstractmethod
     def run(

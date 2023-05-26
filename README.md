@@ -58,6 +58,7 @@ to allow for further analysis.
 
 ## Usage
 ```python
+from sagemaker.processing import NetworkConfig
 from sagemaker.workflow.parameters import ParameterString
 from sagemaker_rightline.model import Configuration
 from sagemaker_rightline.rules import Contains, Equals
@@ -65,6 +66,7 @@ from sagemaker_rightline.validations import (
     PipelineParameters,
     StepImagesExistOnEcr,
     StepKmsKeyId,
+    StepNetworkConfig,
 )
 
 # Import a dummy pipeline
@@ -88,6 +90,14 @@ validations = [
         step_name="output-1",  # optional: if not set, will check all steps
         rule=Equals(),
     ),
+    StepNetworkConfig(
+        network_config_expected=NetworkConfig(
+            enable_network_isolation=False,
+            security_group_ids=["sg-1234567890"],
+            subnets=["subnet-1234567890"],
+        ),
+        rule=Equals(),
+    )
 ]
 
 # Add Validations and SageMaker Pipeline to Configuration

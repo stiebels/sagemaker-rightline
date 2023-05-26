@@ -141,4 +141,18 @@ def test_validation_get_attribute_no_filter(sagemaker_pipeline) -> None:
     assert validation.get_attribute(sagemaker_pipeline) == [
         kms_key_alias_expected,
         kms_key_alias_expected,
+        kms_key_alias_expected,
     ]
+
+
+def test_get_attribute_support(sagemaker_pipeline) -> None:
+    """Test get_attribute method of Validation class."""
+    validation = StepImagesExistOnEcr()
+    assert validation.get_attribute(sagemaker_pipeline) == [IMAGE_1_URI, IMAGE_2_URI, IMAGE_1_URI]
+
+    validation = StepKmsKeyId(
+        step_name="sm_training_step_sklearn",
+        rule=Equals(),
+        kms_key_id_expected="some/kms-key-alias",
+    )
+    assert validation.get_attribute(sagemaker_pipeline) == ["some/kms-key-alias"]
