@@ -2,7 +2,7 @@
 name = "sagemaker-rightline"
 requires-python = ">=3.8"
 version = "0.0.0"
-description = ""
+description = "Python package to easily validate properties of a SageMaker Pipeline.
 authors = [
     {name = "stiebels", email = "stiebels@github.com"},
     {name = "dipanjank", email = "dipanjank@github.com"},
@@ -10,10 +10,6 @@ authors = [
 license = {file = "LICENSE"}
 readme = "README.md"
 keywords = ["sagemaker", "pipeline", "validation"]
-maintainers = [
-    {name = "stiebels", email = "stiebels@github.com"},
-    {name = "dipanjank", email = "dipanjank@github.com"},
-]
 classifiers = [
   # How mature is this project? Common values are
   #   3 - Alpha
@@ -48,11 +44,7 @@ dev = [
 ]
 
 [project.urls]  # Optional
-"Homepage" = "https://github.com/pypa/sampleproject"
-"Bug Reports" = "https://github.com/pypa/sampleproject/issues"
-"Funding" = "https://donate.pypi.org"
-"Say Thanks!" = "http://saythanks.io/to/example"
-"Source" = "https://github.com/pypa/sampleproject/"
+"Homepage" = "https://github.com/stiebels/sagemaker-rightline"
 
 [build-system]
 # These are the assumed default build requirements from pip:
