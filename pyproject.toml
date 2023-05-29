@@ -44,6 +44,7 @@ dev = [
     "pytest-cov",
     "pyproject-flake8",
     "jupyter",
+    "build",
 ]
 
 [project.urls]  # Optional
