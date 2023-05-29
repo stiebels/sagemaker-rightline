@@ -3,12 +3,6 @@
 
 name: Python package
 
-env:
-  REQUIREMENTS_FILE: requirements_all.txt
-  POETRY_VERSION: 1.4.2
-  INSTALL_DEPENDENCY_GROUPS: dev
-  TESTS_DIR: ./tests
-
 on:
   push:
     branches: [ "main" ]
@@ -16,9 +10,20 @@ on:
     branches: [ "main" ]
 
 jobs:
-  Check-Test-Build:
-    name: Check, Test and Build
+  Pre-Commit-Check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+      - name: Pre-Commit
+        uses: pre-commit/action@v3.0.0
 
+  Build-Test:
+    needs: [ "Pre-Commit-Check" ]
+    name: Build-Test
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -33,23 +38,15 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Pre-Commit
       uses: pre-commit/action@v3.0.0
-    - name: Set up poetry
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install poetry==$POETRY_VERSION
-        poetry config virtualenvs.create true
-    - name: Install dependencies
-      run: |
-        poetry export --format requirements.txt --output $REQUIREMENTS_FILE --without-hashes --without-urls --with $INSTALL_DEPENDENCY_GROUPS
-        python -m pip install -r $REQUIREMENTS_FILE
+    - name: Update Pip
+      run: pip install - U pip
+    - name: Build with Dependencies
+      run: pip install .[dev]
     - name: Test with pytest
       run: |
-        pytest $TESTS_DIR
+        pytest -vs ./tests/
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
-    - name: Build
-      run: |
-        poetry build
 
   Ready:
     name: Ready
