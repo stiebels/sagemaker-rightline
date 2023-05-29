@@ -21,8 +21,8 @@ jobs:
       - name: Pre-Commit
         uses: pre-commit/action@v3.0.0
 
-  Build-Test:
-    needs: [ "Pre-Commit-Check" ]
+  Check-Test-Build:
+    needs: [Pre-Commit-Check]
     name: Build-Test
     runs-on: ubuntu-latest
     strategy:
@@ -39,7 +39,7 @@ jobs:
     - name: Pre-Commit
       uses: pre-commit/action@v3.0.0
     - name: Update Pip
-      run: pip install - U pip
+      run: pip install -U pip
     - name: Build with Dependencies
       run: pip install .[dev]
     - name: Test with pytest
@@ -47,6 +47,8 @@ jobs:
         pytest -vs ./tests/
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
+    - name: Build Package
+      run: python3 -m build
 
   Ready:
     name: Ready
