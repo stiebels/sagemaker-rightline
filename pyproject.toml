@@ -2,10 +2,9 @@
 name = "sagemaker-rightline"
 requires-python = ">=3.8"
 version = "0.0.0"
-description = "Python package to easily validate properties of a SageMaker Pipeline.
+description = "Python package to easily validate properties of a SageMaker Pipeline."
 authors = [
-    {name = "stiebels", email = "stiebels@github.com"},
-    {name = "dipanjank", email = "dipanjank@github.com"},
+    {name = "stiebels", email = "stiebels@github.com"}
 ]
 license = {file = "LICENSE"}
 readme = "README.md"

@@ -8,7 +8,3 @@ Describe the change.
 
 * [ ] Updated tests
 * [ ] Updated documentation
-
-
-
-
