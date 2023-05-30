@@ -53,6 +53,8 @@ The following `Rules` are currently implemented:
   - `Equals`
   - `Contains`
 
+All rules support the `negative` parameter (default: `False`), which allows for inverting the rule.
+
 ### 📝 Report
 A `Report` is a class whose instance is returned by the `Configuration` class (optionally a pandas.DataFrame instead).
 It contains the results of the `Validations` that were run against the `Pipeline` object as well as additional information
@@ -99,7 +101,7 @@ validations = [
             security_group_ids=["sg-1234567890"],
             subnets=["subnet-1234567890"],
         ),
-        rule=Equals(),
+        rule=Equals(negative=True),
     ),
     StepLambdaFunctionExists(),
 ]

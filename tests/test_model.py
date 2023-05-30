@@ -40,10 +40,21 @@ def test_configuration_validate_input_validations(validations, error: bool) -> N
 @pytest.mark.parametrize(
     "results",
     [
-        [ValidationResult(success=True, message="test-message", subject="test-subject-1")],
         [
-            ValidationResult(success=True, message="test-message-true", subject="test-subject-2"),
-            ValidationResult(success=False, message="test-message-false", subject="test-subject-3"),
+            ValidationResult(
+                success=True, negative=False, message="test-message", subject="test-subject-1"
+            )
+        ],
+        [
+            ValidationResult(
+                success=True, negative=False, message="test-message-true", subject="test-subject-2"
+            ),
+            ValidationResult(
+                success=False,
+                negative=False,
+                message="test-message-false",
+                subject="test-subject-3",
+            ),
         ],
     ],
 )
@@ -107,15 +118,16 @@ def test_report_to_df() -> None:
         results=[
             {
                 validation_name: ValidationResult(
-                    success=True, message="test-message-0", subject="test-subject-0"
+                    success=True, negative=False, message="test-message-0", subject="test-subject-0"
                 ),
             }
         ]
     )
     df = report.to_df()
-    assert df.shape == (1, 4)
-    assert df.columns.tolist() == ["validation_name", "subject", "success", "message"]
+    assert df.shape == (1, 5)
+    assert df.columns.tolist() == ["validation_name", "negative", "subject", "success", "message"]
     assert df["success"].tolist() == [True]
+    assert df["negative"].tolist() == [False]
     assert df["message"].tolist() == ["test-message-0"]
     assert df["validation_name"].tolist() == [validation_name]
 

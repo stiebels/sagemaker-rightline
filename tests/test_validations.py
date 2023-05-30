@@ -44,14 +44,17 @@ def test_container_image() -> None:
 
 def test_validation_result() -> None:
     success = True
+    negative = True
     message = "test-message"
     subject = "test-subject"
     vr = ValidationResult(
         success=success,
+        negative=negative,
         message=message,
         subject=subject,
     )
     assert vr.success == success
+    assert vr.negative == negative
     assert vr.message == message
     assert vr.subject == subject
 
@@ -67,6 +70,7 @@ def test_image_exists_run_positive(ecr_client, sagemaker_pipeline) -> None:
         results = image_exists.run(sagemaker_pipeline)
 
     assert results[image_exists.name].success
+    assert not results[image_exists.name].negative
     assert results[image_exists.name].message.endswith(" exist.")
 
 

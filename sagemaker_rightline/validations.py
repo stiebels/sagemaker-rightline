@@ -160,6 +160,7 @@ class StepImagesExistOnEcr(Validation):
             return {
                 self.name: ValidationResult(
                     success=False,
+                    negative=False,
                     message=f"Images {not_exist} do not exist.",
                     subject=str(not_exist),
                 )
@@ -167,6 +168,7 @@ class StepImagesExistOnEcr(Validation):
         return {
             self.name: ValidationResult(
                 success=True,
+                negative=False,
                 message=f"Images {exist} exist.",
                 subject=str(exist),
             )
@@ -319,6 +321,7 @@ class StepLambdaFunctionExists(Validation):
             return {
                 self.name: ValidationResult(
                     success=False,
+                    negative=False,
                     message=f"Lambda Function {not_exist} does not " f"exist.",
                     subject=str(lambda_func_observed),
                 )
@@ -327,6 +330,7 @@ class StepLambdaFunctionExists(Validation):
             return {
                 self.name: ValidationResult(
                     success=True,
+                    negative=False,
                     message=f"Lambda Function {exist} exists.",
                     subject=str(lambda_func_observed),
                 )
