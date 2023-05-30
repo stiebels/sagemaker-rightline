@@ -40,6 +40,7 @@ class Equals(Rule):
         is_equal = is_equal if not self.negative else not is_equal
         return ValidationResult(
             success=is_equal,
+            negative=self.negative,
             message=f"{str(observed)} does {'not ' if not is_equal else ''}equal {str(expected)}",
             subject=str(expected),
         )
@@ -71,6 +72,7 @@ class Contains(Rule):
         is_contained = is_contained if not self.negative else not is_contained
         return ValidationResult(
             success=is_contained,
+            negative=self.negative,
             message=f"{str(observed)} does {'not ' if not is_contained else ''}contain "
             f"{str(expected)}",
             subject=str(expected),

@@ -57,7 +57,7 @@ if __name__ == "__main__":
                         security_group_ids=["sg-1234567890"],
                         subnets=["subnet-1234567890"],
                     ),
-                    rule=Equals(),
+                    rule=Equals(negative=True),
                 ),
                 StepLambdaFunctionExists(),
             ]
