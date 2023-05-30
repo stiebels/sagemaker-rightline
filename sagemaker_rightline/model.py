@@ -22,13 +22,30 @@ class ValidationResult:
 class Rule(ABC):
     """Rule abstract base class."""
 
-    def __init__(self, name: str) -> None:
-        """Initialize a Rule object."""
+    def __init__(self, name: str, negative: bool = False) -> None:
+        """Initialize a Rule object.
+
+        :param name: name of the rule
+        :type name: str
+        :param negative: whether the rule should be inverted, i.e. "not" (default: False)
+        :type negative: bool
+        :return:
+        :rtype:
+        """
         self.name: str = name
+        self.negative: bool = negative
 
     @abstractmethod
     def run(self, observed: Any, expected: Any) -> ValidationResult:
-        """Run the rule."""
+        """Run the rule.
+
+        :param observed: observed value
+        :type observed: Any
+        :param expected: expected value
+        :type expected: Any
+        :return: validation result
+        :rtype: ValidationResult
+        """
         raise NotImplementedError
 
 
