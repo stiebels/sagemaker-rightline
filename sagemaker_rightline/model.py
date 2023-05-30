@@ -15,6 +15,7 @@ class ValidationResult:
     """Validation result dataclass."""
 
     success: bool
+    negative: bool
     message: str
     subject: str
 
@@ -22,13 +23,30 @@ class ValidationResult:
 class Rule(ABC):
     """Rule abstract base class."""
 
-    def __init__(self, name: str) -> None:
-        """Initialize a Rule object."""
+    def __init__(self, name: str, negative: bool = False) -> None:
+        """Initialize a Rule object.
+
+        :param name: name of the rule
+        :type name: str
+        :param negative: whether the rule should be inverted, i.e. "not" (default: False)
+        :type negative: bool
+        :return:
+        :rtype:
+        """
         self.name: str = name
+        self.negative: bool = negative
 
     @abstractmethod
     def run(self, observed: Any, expected: Any) -> ValidationResult:
-        """Run the rule."""
+        """Run the rule.
+
+        :param observed: observed value
+        :type observed: Any
+        :param expected: expected value
+        :type expected: Any
+        :return: validation result
+        :rtype: ValidationResult
+        """
         raise NotImplementedError
 
 
@@ -126,12 +144,26 @@ class Validation(ABC):
 
 
 class Report:
+    """Report class."""
+
     def __init__(self, results: List[Dict[str, ValidationResult]]) -> None:
+        """Initialize a Report object.
+
+        :param results: list of validation results
+        :type results: List[Dict[str, ValidationResult]]
+        :return: None
+        :rtype: None
+        """
         self.results: List[Dict[str, ValidationResult]] = results
 
     def to_df(self) -> pd.DataFrame:
+        """Convert report to pandas DataFrame.
+
+        :return: report as pandas DataFrame
+        :rtype: pd.DataFrame
+        """
         # TODO: refactor
-        df = pd.DataFrame(columns=["validation_name", "subject", "success", "message"])
+        df = pd.DataFrame(columns=["validation_name", "negative", "subject", "success", "message"])
         for validation in self.results:
             col_name = str(list(validation.keys())[0])
             validations = [x.__dict__ for x in validation.values()]
