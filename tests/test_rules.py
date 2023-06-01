@@ -33,6 +33,7 @@ def test_equals(observed: List, expected: List, negative: bool, success: bool) -
     vr = equals.run(
         observed=observed,
         expected=expected,
+        validation_name="some-validation",
     )
     assert vr.success == success
 
@@ -62,5 +63,6 @@ def test_contains_str(
     vr = contains.run(
         observed=observed,
         expected=expected,
+        validation_name="some-validation",
     )
     assert vr.success == success

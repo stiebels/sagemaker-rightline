@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Union
+from typing import List, Optional, Union
 
 import boto3
 from botocore.exceptions import ClientError
@@ -29,20 +29,20 @@ class PipelineParameters(Validation):
         self.parameters_expected: List[Parameter] = parameters_expected
         self.ignore_default_value: bool = ignore_default_value
 
-    def run(self, sagemaker_pipeline: Pipeline) -> Dict[str, ValidationResult]:
+    def run(self, sagemaker_pipeline: Pipeline) -> ValidationResult:
         """Runs validation of Parameters on Pipeline.
 
         :param sagemaker_pipeline: SageMaker Pipeline
         :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
         :return: Dict containing ValidationResult
-        :rtype: Dict[str, ValidationResult]
+        :rtype: ValidationResult
         """
         parameters_observed = self.get_attribute(sagemaker_pipeline)
         if self.ignore_default_value:
             for ix, parameter in enumerate(parameters_observed):
                 parameters_observed[ix].default_value = None
-        result = self.rule.run(parameters_observed, self.parameters_expected)
-        return {self.name: result}
+        result = self.rule.run(parameters_observed, self.parameters_expected, self.name)
+        return result
 
 
 class StepKmsKeyId(Validation):
@@ -71,17 +71,17 @@ class StepKmsKeyId(Validation):
     def run(
         self,
         sagemaker_pipeline: Pipeline,
-    ) -> Dict[str, ValidationResult]:
+    ) -> ValidationResult:
         """Runs validation of Parameters on Pipeline.
 
         :param sagemaker_pipeline: SageMaker Pipeline
         :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
-        :return: Dict containing the validation result
-        :rtype: Dict[str, ValidationResult]
+        :return: validation result
+        :rtype: ValidationResult
         """
         kms_keys_observed = self.get_attribute(sagemaker_pipeline)
-        results = self.rule.run(kms_keys_observed, [self.kms_key_id_expected])
-        return {self.name: results}
+        result = self.rule.run(kms_keys_observed, [self.kms_key_id_expected], self.name)
+        return result
 
 
 @dataclass
@@ -128,14 +128,14 @@ class StepImagesExistOnEcr(Validation):
     def run(
         self,
         sagemaker_pipeline: Pipeline,
-    ) -> Dict[str, ValidationResult]:
+    ) -> ValidationResult:
         """Runs validation of whether Image URIs referenced in Pipeline Steps
         exist in ECR.
 
         :param sagemaker_pipeline: SageMaker Pipeline
         :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
-        :return: Dict containing the validation result
-        :rtype: Dict[str, ValidationResult]
+        :return: validation result
+        :rtype: ValidationResult
         """
         paginator = self.client.get_paginator("describe_images")
 
@@ -157,22 +157,20 @@ class StepImagesExistOnEcr(Validation):
             except ClientError:
                 not_exist.append(uri)
         if not_exist:
-            return {
-                self.name: ValidationResult(
-                    success=False,
-                    negative=False,
-                    message=f"Images {not_exist} do not exist.",
-                    subject=str(not_exist),
-                )
-            }
-        return {
-            self.name: ValidationResult(
-                success=True,
+            return ValidationResult(
+                validation_name=self.name,
+                success=False,
                 negative=False,
-                message=f"Images {exist} exist.",
-                subject=str(exist),
+                message=f"Images {not_exist} do not exist.",
+                subject=str(not_exist),
             )
-        }
+        return ValidationResult(
+            validation_name=self.name,
+            success=True,
+            negative=False,
+            message=f"Images {exist} exist.",
+            subject=str(exist),
+        )
 
 
 class StepNetworkConfig(Validation):
@@ -227,13 +225,13 @@ class StepNetworkConfig(Validation):
     def run(
         self,
         sagemaker_pipeline: Pipeline,
-    ) -> Dict[str, ValidationResult]:
+    ) -> ValidationResult:
         """Runs validation of NetworkConfigs on Pipeline.
 
         :param sagemaker_pipeline: SageMaker Pipeline
         :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
-        :return: Dict containing the validation result
-        :rtype: Dict[str, ValidationResult]
+        :return: validation result
+        :rtype: ValidationResult
         """
         network_configs_observed = self.get_attribute(sagemaker_pipeline)
 
@@ -261,8 +259,10 @@ class StepNetworkConfig(Validation):
             if self.network_config_expected
             else self.network_config_expected
         )
-        results = self.rule.run(network_configs_observed_dict, [network_config_expected_dict])
-        return {self.name: results}
+        result = self.rule.run(
+            network_configs_observed_dict, [network_config_expected_dict], self.name
+        )
+        return result
 
 
 class StepLambdaFunctionExists(Validation):
@@ -298,13 +298,13 @@ class StepLambdaFunctionExists(Validation):
     def run(
         self,
         sagemaker_pipeline: Pipeline,
-    ) -> Dict[str, ValidationResult]:
+    ) -> ValidationResult:
         """Runs validation of Parameters on Pipeline.
 
         :param sagemaker_pipeline: SageMaker Pipeline
         :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
-        :return: Dict containing the validation result
-        :rtype: Dict[str, ValidationResult]
+        :return: validation result
+        :rtype: ValidationResult
         """
         lambda_func_observed = self.get_attribute(sagemaker_pipeline)
         exist = []
@@ -318,20 +318,18 @@ class StepLambdaFunctionExists(Validation):
             except ClientError:
                 not_exist.append(func)
         if not_exist:
-            return {
-                self.name: ValidationResult(
-                    success=False,
-                    negative=False,
-                    message=f"Lambda Function {not_exist} does not " f"exist.",
-                    subject=str(lambda_func_observed),
-                )
-            }
+            return ValidationResult(
+                success=False,
+                negative=False,
+                message=f"Lambda Function {not_exist} does not " f"exist.",
+                subject=str(lambda_func_observed),
+                validation_name=self.name,
+            )
         else:
-            return {
-                self.name: ValidationResult(
-                    success=True,
-                    negative=False,
-                    message=f"Lambda Function {exist} exists.",
-                    subject=str(lambda_func_observed),
-                )
-            }
+            return ValidationResult(
+                success=True,
+                negative=False,
+                message=f"Lambda Function {exist} exists.",
+                subject=str(lambda_func_observed),
+                validation_name=self.name,
+            )
