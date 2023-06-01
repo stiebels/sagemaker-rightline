@@ -20,6 +20,7 @@ class Equals(Rule):
         self,
         observed: List[Union[int, float, str, dict]],
         expected: List[Union[int, float, str, dict]],
+        validation_name: str,
     ) -> ValidationResult:
         """Check if two lists are equal.
 
@@ -27,6 +28,8 @@ class Equals(Rule):
         :type observed: List[Any]
         :param expected: expected list
         :type expected: List[Any]
+        :param validation_name: name of the validation
+        :type validation_name: str
         :return: validation result
         :rtype: ValidationResult
         """
@@ -39,6 +42,7 @@ class Equals(Rule):
 
         is_equal = is_equal if not self.negative else not is_equal
         return ValidationResult(
+            validation_name=validation_name,
             success=is_equal,
             negative=self.negative,
             message=f"{str(observed)} does {'not ' if not is_equal else ''}equal {str(expected)}",
@@ -59,18 +63,24 @@ class Contains(Rule):
         """
         super().__init__("Contains", negative)
 
-    def run(self, observed: List[Any], expected: List[Any]) -> ValidationResult:
+    def run(
+        self, observed: List[Any], expected: List[Any], validation_name: str
+    ) -> ValidationResult:
         """Check if a list contains another list.
 
         :param observed: observed list
         :type observed: List[Any]
         :param expected: expected list
+        :type expected: List[Any]
+        :param validation_name: name of the validation
+        :type validation_name: str
         :return: validation result
         :rtype: ValidationResult
         """
         is_contained = set(expected).issubset(set(observed))
         is_contained = is_contained if not self.negative else not is_contained
         return ValidationResult(
+            validation_name=validation_name,
             success=is_contained,
             negative=self.negative,
             message=f"{str(observed)} does {'not ' if not is_contained else ''}contain "

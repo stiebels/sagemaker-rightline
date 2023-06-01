@@ -47,16 +47,19 @@ def test_validation_result() -> None:
     negative = True
     message = "test-message"
     subject = "test-subject"
+    validation_name = "test"
     vr = ValidationResult(
         success=success,
         negative=negative,
         message=message,
         subject=subject,
+        validation_name=validation_name,
     )
     assert vr.success == success
     assert vr.negative == negative
     assert vr.message == message
     assert vr.subject == subject
+    assert vr.validation_name == validation_name
 
 
 @mock_ecr
@@ -67,20 +70,20 @@ def test_image_exists_run_positive(ecr_client, sagemaker_pipeline) -> None:
     ]
     with create_image(ecr_client, container_images):
         image_exists = StepImagesExistOnEcr()
-        results = image_exists.run(sagemaker_pipeline)
+        result = image_exists.run(sagemaker_pipeline)
 
-    assert results[image_exists.name].success
-    assert not results[image_exists.name].negative
-    assert results[image_exists.name].message.endswith(" exist.")
+    assert result.success
+    assert not result.negative
+    assert result.message.endswith(" exist.")
 
 
 @mock_ecr
 def test_image_exists_run_negative(sagemaker_pipeline) -> None:
     image_exists = StepImagesExistOnEcr()
-    results = image_exists.run(sagemaker_pipeline)
+    result = image_exists.run(sagemaker_pipeline)
 
-    assert not results[image_exists.name].success
-    assert results[image_exists.name].message.endswith(" not exist.")
+    assert not result.success
+    assert result.message.endswith(" not exist.")
 
 
 @pytest.mark.parametrize(
@@ -115,8 +118,8 @@ def test_pipeline_parameters_equals(parameters_expected, success, sagemaker_pipe
         parameters_expected=parameters_expected,
         rule=Equals(),
     )
-    results = pipeline_parameters.run(sagemaker_pipeline)
-    assert results[pipeline_parameters.name].success == success
+    result = pipeline_parameters.run(sagemaker_pipeline)
+    assert result.success == success
 
 
 @pytest.mark.parametrize(
@@ -148,8 +151,8 @@ def test_pipeline_parameters_ignore_default_value(
         ignore_default_value=ignore_default_value,
         rule=Equals(),
     )
-    results = pipeline_parameters.run(sagemaker_pipeline)
-    assert results[pipeline_parameters.name].success == success
+    result = pipeline_parameters.run(sagemaker_pipeline)
+    assert result.success == success
 
 
 def test_has_parameters_raise() -> None:
@@ -169,10 +172,8 @@ def test_step_kms_key_id(kms_key_id_expected, success, sagemaker_pipeline) -> No
         kms_key_id_expected=kms_key_id_expected,
         rule=Equals(),
     )
-    results = has_kms_key_id_in_processing_output.run(sagemaker_pipeline)[
-        has_kms_key_id_in_processing_output.name
-    ]
-    assert results.success == success
+    result = has_kms_key_id_in_processing_output.run(sagemaker_pipeline)
+    assert result.success == success
 
 
 @pytest.mark.parametrize(
@@ -188,10 +189,8 @@ def test_step_kms_key_id_filter(kms_key_id_expected, success, sagemaker_pipeline
         step_name="sm_processing_step_sklearn",
         rule=Equals(),
     )
-    results = has_kms_key_id_in_processing_output.run(sagemaker_pipeline)[
-        has_kms_key_id_in_processing_output.name
-    ]
-    assert results.success == success
+    result = has_kms_key_id_in_processing_output.run(sagemaker_pipeline)
+    assert result.success == success
 
 
 @pytest.mark.parametrize(
@@ -206,10 +205,8 @@ def test_step_kms_key_id_no_filter(kms_key_id_expected, success, sagemaker_pipel
         kms_key_id_expected=kms_key_id_expected,
         rule=Equals(),
     )
-    results = has_kms_key_id_in_processing_output.run(sagemaker_pipeline)[
-        has_kms_key_id_in_processing_output.name
-    ]
-    assert results.success == success
+    result = has_kms_key_id_in_processing_output.run(sagemaker_pipeline)
+    assert result.success == success
 
 
 def test_get_filtered_attributes_steps(sagemaker_pipeline) -> None:
@@ -234,7 +231,7 @@ def test_step_network_config(
         network_config_expected=network_config_expected,
         rule=Equals(),
     )
-    results = step_network_config.run(sagemaker_pipeline)[step_network_config.name]
+    results = step_network_config.run(sagemaker_pipeline)
     assert not results.success
 
 
@@ -284,8 +281,8 @@ def test_step_network_config_filter(
         rule=Equals(),
         step_name=step_name,
     )
-    results = step_network_config.run(sagemaker_pipeline)[step_network_config.name]
-    assert results.success == success
+    result = step_network_config.run(sagemaker_pipeline)
+    assert result.success == success
 
 
 @mock_iam
@@ -293,12 +290,12 @@ def test_step_network_config_filter(
 def test_lambda_function_exists_positive(lambda_client, sagemaker_pipeline) -> None:
     with create_lambda_function(lambda_client, [TEST_LAMBDA_FUNC_NAME]):
         lambda_function_exists = StepLambdaFunctionExists()
-        results = lambda_function_exists.run(sagemaker_pipeline)
-    assert results[lambda_function_exists.name].success
+        result = lambda_function_exists.run(sagemaker_pipeline)
+    assert result.success
 
 
 @mock_lambda
 def test_lambda_function_exists_negative(lambda_client, sagemaker_pipeline) -> None:
     lambda_function_exists = StepLambdaFunctionExists()
-    results = lambda_function_exists.run(sagemaker_pipeline)
-    assert not results[lambda_function_exists.name].success
+    result = lambda_function_exists.run(sagemaker_pipeline)
+    assert not result.success

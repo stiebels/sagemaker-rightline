@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from copy import copy
 from dataclasses import dataclass
 from operator import attrgetter
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Iterable, List, Optional, Union
 
 import pandas as pd
 from sagemaker.workflow.pipeline import Pipeline
@@ -14,6 +14,7 @@ from sagemaker.workflow.pipeline import Pipeline
 class ValidationResult:
     """Validation result dataclass."""
 
+    validation_name: str
     success: bool
     negative: bool
     message: str
@@ -37,13 +38,15 @@ class Rule(ABC):
         self.negative: bool = negative
 
     @abstractmethod
-    def run(self, observed: Any, expected: Any) -> ValidationResult:
+    def run(self, observed: Any, expected: Any, validation_name: str) -> ValidationResult:
         """Run the rule.
 
         :param observed: observed value
         :type observed: Any
         :param expected: expected value
         :type expected: Any
+        :param validation_name: name of the validation
+        :type validation_name: str
         :return: validation result
         :rtype: ValidationResult
         """
@@ -138,7 +141,7 @@ class Validation(ABC):
     def run(
         self,
         sagemaker_pipeline: Pipeline,
-    ) -> Dict[str, ValidationResult]:
+    ) -> ValidationResult:
         """Run validation."""
         raise NotImplementedError
 
@@ -146,7 +149,7 @@ class Validation(ABC):
 class Report:
     """Report class."""
 
-    def __init__(self, results: List[Dict[str, ValidationResult]]) -> None:
+    def __init__(self, results: List[ValidationResult]) -> None:
         """Initialize a Report object.
 
         :param results: list of validation results
@@ -154,7 +157,7 @@ class Report:
         :return: None
         :rtype: None
         """
-        self.results: List[Dict[str, ValidationResult]] = results
+        self.results: List[ValidationResult] = results
 
     def to_df(self) -> pd.DataFrame:
         """Convert report to pandas DataFrame.
@@ -162,14 +165,10 @@ class Report:
         :return: report as pandas DataFrame
         :rtype: pd.DataFrame
         """
-        # TODO: refactor
-        df = pd.DataFrame(columns=["validation_name", "negative", "subject", "success", "message"])
-        for validation in self.results:
-            col_name = str(list(validation.keys())[0])
-            validations = [x.__dict__ for x in validation.values()]
-            df_int = pd.DataFrame.from_records(validations)
-            df_int["validation_name"] = col_name
-            df = pd.concat([df, df_int])
+        df = pd.DataFrame.from_records(
+            data=[x.__dict__ for x in self.results],
+            columns=ValidationResult.__annotations__.keys(),
+        )
         return df.reset_index(drop=True)
 
 
@@ -214,12 +213,12 @@ class Configuration:
 
     @staticmethod
     def _make_report(
-        results: List[Dict[str, ValidationResult]], return_df: bool = False
+        results: List[ValidationResult], return_df: bool = False
     ) -> Union[Report, pd.DataFrame]:
         """Make a report from a list of results.
 
         :param results: List of results.
-        :type results: List[Dict[str, str]]
+        :type results: List[ValidationResult
         :param return_df: If True, return a pandas.DataFrame instead of a Report object.
         :type return_df: bool
         :return: Report object or pd.DataFrame.
@@ -231,26 +230,25 @@ class Configuration:
         return report
 
     @staticmethod
-    def _handle_empty_results(
-        result: Dict[str, ValidationResult], validation: Validation
-    ) -> Dict[str, ValidationResult]:
+    def _handle_empty_results(result: ValidationResult, validation: Validation) -> ValidationResult:
         """Handle empty results. If a Validation does not return any results
         (e.g. when no observation were made), a warning is logged and a
         ValidationResult indicating this is added to the result dict.
 
-        :param result: Result dict.
-        :type result: Dict[str, ValidationResult]
+        :param result: validation_result.
+        :type result: ValidationResult
         :param validation: Validation object.
         :type validation: Validation
-        :return: Result dict.
-        :rtype: Dict[str, ValidationResult]
+        :return: validation result.
+        :rtype: ValidationResult
         """
-        if len(result) == 0:
+        if not result:
             logging.warning(
                 f"Validation {validation.name} did not return any results. "
                 f"Please check if the path {validation.path} is correct."
             )
-            result[validation.name] = ValidationResult(
+            return ValidationResult(
+                validation_name=validation.name,
                 success=False,
                 message=f"Validation {validation.name} did not return any results. "
                 f"Please check if the path {validation.path} is correct.",
@@ -258,7 +256,7 @@ class Configuration:
             )
         return result
 
-    def run(self, fail_fast: bool = False, return_df: bool = False) -> Report:
+    def run(self, fail_fast: bool = False, return_df: bool = False) -> Union[Report, dict]:
         """Run all validations and return a report.
 
         :param fail_fast: If True, stop validation after the first failure.
@@ -273,11 +271,7 @@ class Configuration:
             result = validation.run(self.sagemaker_pipeline)
             result = Configuration._handle_empty_results(result, validation)
             results.append(result)
-            if (
-                not result[validation.name].success
-                and fail_fast
-                and not (ix == len(self.validations) - 1)
-            ):
+            if not result.success and fail_fast and not (ix == len(self.validations) - 1):
                 logging.info(
                     "Validation failed and fail_fast is set to True. Stopping validation "
                     "prematurely."
