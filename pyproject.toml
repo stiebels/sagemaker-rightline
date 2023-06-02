@@ -5,6 +5,7 @@ version = "0.0.0"
 description = "Python package to easily validate properties of a SageMaker Pipeline."
 authors = [
     {name = "stiebels", email = "stiebels@github.com"}
+    {name = "dipanjank", email = "dipanjank@github.com"}
 ]
 license = {file = "LICENSE"}
 readme = "README.md"
@@ -42,7 +43,7 @@ dev = [
     "build",
 ]
 
-[project.urls]  # Optional
+[project.urls]
 "Homepage" = "https://github.com/stiebels/sagemaker-rightline"
 
 [build-system]

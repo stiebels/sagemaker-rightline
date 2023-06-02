@@ -36,8 +36,6 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Pre-Commit
-      uses: pre-commit/action@v3.0.0
     - name: Update Pip
       run: pip install -U pip
     - name: Build with Dependencies
