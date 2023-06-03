@@ -15,6 +15,7 @@ jobs:
         python-version: "3.10"
     - name: Update Pip
       run: pip install -U pip
+
   Build:
     needs: [Setup]
     runs-on: ubuntu-latest
@@ -22,10 +23,12 @@ jobs:
     - name: Install build
       run: pip install build
     - name: Build Package
-      run: python3 -m build ..
+      working-directory: ..
+      run: python3 -m build
+
   PyPI-Publish:
     needs: [Build]
-    name: Upload release to PyPI
+    name: Upload Release to PyPI
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -35,6 +38,7 @@ jobs:
     steps:
     - name: Publish package distributions to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
+
   Ready:
     name: Ready
     needs: [PyPI-Publish]
