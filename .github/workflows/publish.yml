@@ -1,0 +1,41 @@
+on:
+  release:
+    types: [published]
+
+jobs:
+  Setup:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
+    - name: Update Pip
+      run: pip install -U pip
+  Build:
+    needs: [Setup]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install build
+      run: pip install build
+    - name: Build Package
+      run: python3 -m build
+  PyPI-Publish:
+    needs: [Build]
+    name: Upload release to PyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/${{ github.event.repository.name }}
+    permissions:
+      id-token: write
+    steps:
+    - name: Publish package distributions to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+  Ready:
+    name: Ready
+    needs: [PyPI-Publish]
+    uses: ./.github/workflows/ready.yml
+    with:
+      message: "Package has been published."
