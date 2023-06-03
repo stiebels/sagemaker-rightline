@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Install build
-      run: pip install -e .[dev]
+      run: pip install build
     - name: Build Package
       run: python3 -m build
 
