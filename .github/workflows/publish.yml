@@ -22,7 +22,7 @@ jobs:
     - name: Install build
       run: pip install build
     - name: Build Package
-      run: python3 -m build
+      run: python3 -m build ..
   PyPI-Publish:
     needs: [Build]
     name: Upload release to PyPI
