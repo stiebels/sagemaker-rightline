@@ -1,7 +1,7 @@
 [project]
 name = "sagemaker-rightline"
 requires-python = ">=3.8"
-version = "0.0.0"
+dynamic = ["version"]
 description = "Python package to easily validate properties of a SageMaker Pipeline."
 authors = [
     {name = "stiebels", email = "stiebels@github.com"},
@@ -52,6 +52,9 @@ dev = [
 # https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
 requires = ["setuptools>=43.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "sagemaker_rightline.__version__"}
 
 [tool.black]
 line-length = 100

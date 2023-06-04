@@ -20,7 +20,6 @@ jobs:
     - name: Set Version & Build Package
       run: |
         escaped_version=$(echo "${{ github.ref_name}}" | sed 's/[\*\.\[\]\|\(\)\$\\\/]/\\&/g')
-        sed -i "s/version = \"0\.0\.0\"/version = \"$escaped_version\"/g" ./pyproject.toml
         sed -i "s/__version__ = \"0\.0\.0\"/__version__ = \"$escaped_version\"/g" ./sagemaker_rightline/__init__.py
         python3 -m build
     - name: Upload Artifact
