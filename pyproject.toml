@@ -17,8 +17,8 @@ classifiers = [
   #   5 - Production/Stable
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
-  "Topic :: Software Development :: LIBRARIES :: PYTHON MODULES",
-  "Topic :: Software Development :: TESTING",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Software Development :: Testing",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.8",
