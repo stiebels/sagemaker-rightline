@@ -109,7 +109,15 @@ class StepImagesExistOnEcr(Validation):
         boto3_client: Union["boto3.client('ecr')", str] = "ecr",  # noqa F821
         step_name: Optional[str] = None,
     ) -> None:
-        """Initialize ImageExists validation."""
+        """Initialize ImageExists validation.
+
+        :param boto3_client: boto3 client to use, defaults to "ecr"
+        :type boto3_client: Union["boto3.client('ecr')", str], optional
+        :param step_name: Step name to filter on, defaults to None
+        :type step_name: Optional[str], optional
+        :return: None
+        :rtype: None
+        """
         self.step_filter: str = f"name=={step_name}" if step_name else ""
         super().__init__(
             name="StepImagesExistOnEcr",
@@ -184,7 +192,17 @@ class StepNetworkConfig(Validation):
     def __init__(
         self, network_config_expected: NetworkConfig, rule: Rule, step_name: Optional[str] = None
     ) -> None:
-        """Initialize StepNetworkConfig validation."""
+        """Initialize StepNetworkConfig validation.
+
+        :param network_config_expected: Expected NetworkConfig
+        :type network_config_expected: NetworkConfig
+        :param rule: Rule to apply
+        :type rule: Rule
+        :param step_name: Name of Step to validate, defaults to None
+        :type step_name: Optional[str], optional
+        :return: None
+        :rtype: None
+        """
         self.step_filter: str = f"name=={step_name}" if step_name else ""
         super().__init__(
             name="StepNetworkConfig",
@@ -331,5 +349,139 @@ class StepLambdaFunctionExists(Validation):
                 negative=False,
                 message=f"Lambda Function {exist} exists.",
                 subject=str(lambda_func_observed),
+                validation_name=self.name,
+            )
+
+
+class StepRoleNameAsExpected(Validation):
+    """Validate Role of Pipeline Step.
+
+    Supported only for ProcessingStep and TrainingStep. This validation
+    is useful when you want to ensure that the Role of a Pipeline Step
+    is as expected.
+    """
+
+    def __init__(
+        self,
+        role_name_expected: str,
+        rule: Rule,
+        step_name: Optional[str] = None,
+    ) -> None:
+        """Initialize StepRole validation.
+
+        :param role_name_expected: Expected Role name
+        :type role_name_expected: str
+        :param rule: Rule to use for validation
+        :type rule: Rule
+        :param step_name: Name of Step to validate, defaults to None
+        :type step_name: Optional[str], optional
+        :return: None
+        :rtype: None
+        """
+        self.step_filter: str = f"name=={step_name}" if step_name else ""
+
+        super().__init__(
+            name="StepRole",
+            paths=[
+                f".steps[{self.step_filter} && step_type/value==Processing].processor.role",
+                f".steps[{self.step_filter} && step_type/value==Training].estimator.role",
+            ],
+            rule=rule,
+        )
+        self.role_name_expected: str = role_name_expected
+
+    def run(
+        self,
+        sagemaker_pipeline: Pipeline,
+    ) -> ValidationResult:
+        """Runs validation of Parameters on Pipeline.
+
+        :param sagemaker_pipeline: SageMaker Pipeline
+        :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
+        :return: validation result
+        :rtype: ValidationResult
+        """
+        role_arns_observed = self.get_attribute(sagemaker_pipeline)
+        role_name_observed = [role_arn.split("/")[-1] for role_arn in role_arns_observed]
+        result = self.rule.run(role_name_observed, [self.role_name_expected], self.name)
+        return result
+
+
+class StepRoleNameExists(Validation):
+    """Validate existence of Role of Pipeline Step.
+
+    Supported only for ProcessingStep and TrainingStep. This validation
+    is useful when you want to ensure that Roles of Pipeline Steps
+    exist.
+    """
+
+    def __init__(
+        self,
+        step_name: Optional[str] = None,
+        boto3_client: Union["boto3.client('iam')", str] = "iam",  # noqa F821
+    ) -> None:
+        """Initialize StepRole validation.
+
+        :param step_name: Name of Step to validate, defaults to None
+        :type step_name: Optional[str], optional
+        :param boto3_client: Boto3 client to use for checking Role existence, defaults to "iam"
+        :type boto3_client: Union["boto3.client('iam')", str], optional
+        :return: None
+        :rtype: None
+        """
+        self.step_filter: str = f"name=={step_name}" if step_name else ""
+        if isinstance(boto3_client, str) and boto3_client != "iam":
+            raise ValueError(f"boto3_client must be 'iam', not {boto3_client}.")
+        if boto3_client:
+            self.client = (
+                boto3_client if not isinstance(boto3_client, str) else boto3.client(boto3_client)
+            )
+
+        super().__init__(
+            name="StepRoleExists",
+            paths=[
+                f".steps[{self.step_filter} && step_type/value==Processing].processor.role",
+                f".steps[{self.step_filter} && step_type/value==Training].estimator.role",
+            ],
+        )
+
+    def run(
+        self,
+        sagemaker_pipeline: Pipeline,
+    ) -> ValidationResult:
+        """Runs validation of Parameters on Pipeline.
+
+        :param sagemaker_pipeline: SageMaker Pipeline
+        :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
+        :return: validation result
+        :rtype: ValidationResult
+        """
+        role_arns_observed = self.get_attribute(sagemaker_pipeline)
+        role_name_observed = [role_arn.split("/")[-1] for role_arn in role_arns_observed]
+
+        exist = []
+        not_exist = []
+        for role_name in role_name_observed:
+            try:
+                _ = self.client.get_role(
+                    RoleName=role_name,
+                )
+                exist.append(role_name)
+            except ClientError:
+                not_exist.append(role_name)
+        if not_exist:
+            return ValidationResult(
+                success=False,
+                negative=False,
+                message=f"Role {not_exist} does not exist.",
+                subject=str(role_name_observed),
+                validation_name=self.name,
+            )
+        else:
+            return ValidationResult(
+                success=True,
+                negative=False,
+                message=f"Role {exist} exists.",
+                subject=str(role_name_observed),
                 validation_name=self.name,
             )
