@@ -5,7 +5,7 @@ on:
     types: [published]
 
 jobs:
-  Setup:
+  Build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -15,11 +15,6 @@ jobs:
         python-version: "3.10"
     - name: Update Pip
       run: pip install -U pip
-
-  Build:
-    needs: [Setup]
-    runs-on: ubuntu-latest
-    steps:
     - name: Install build
       run: pip install build
     - name: debug
