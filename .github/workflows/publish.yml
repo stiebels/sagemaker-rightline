@@ -22,6 +22,8 @@ jobs:
     steps:
     - name: Install build
       run: pip install build
+    - name: debug
+      run: ls --all
     - name: Build Package
       run: python3 -m build
 
