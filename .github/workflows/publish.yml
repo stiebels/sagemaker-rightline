@@ -17,10 +17,12 @@ jobs:
       run: pip install -U pip
     - name: Install build
       run: pip install build
-    - name: Version & Build Package
-      uses: relekang/python-semantic-release@master
-#    - name: Build Package
-#      run: python3 -m build
+    - name: Build Package
+      run: |
+        escaped_version=$(echo "${{ github.ref_name}}" | sed 's/[\*\.\[\]\|\(\)\$\\\/]/\\&/g')
+        sed -i "s/version = \"0\.0\.0\"/version = \"$escaped_version\"/g" ./pyproject.toml
+        cat ./pyproject.toml
+        python3 -m build
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
       with:
