@@ -39,9 +39,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: dist
-        path: artifact/
-    - name: debug
-      run: ls artifact
+        path: ./dist/
     - name: Publish package distributions to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
 
