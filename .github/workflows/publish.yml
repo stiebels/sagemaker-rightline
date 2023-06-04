@@ -5,7 +5,7 @@ on:
     types: [published]
 
 jobs:
-  Build-Publish:
+  Build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -17,16 +17,10 @@ jobs:
       run: pip install -U pip
     - name: Install build
       run: pip install build
-    - name: Set package version to Tag
-      shell: bash
-      run: |
-        VERSION=$(echo $GITHUB_REF | sed 's#.*/v##')
-        PLACEHOLDER='__version__ = "0.0.0"'
-        VERSION_FILE='sagemaker_rightline/__init__.py'
-        grep "$PLACEHOLDER" "$VERSION_FILE"
-        sed -i "s/$PLACEHOLDER/__version__ = \"${VERSION}\"/g" "$VERSION_FILE"
-    - name: Build Package
-      run: python3 -m build
+    - name: Version & Build Package
+      uses: relekang/python-semantic-release@master
+#    - name: Build Package
+#      run: python3 -m build
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
       with:
@@ -34,7 +28,7 @@ jobs:
         path: ./dist
 
   PyPI-Publish:
-    needs: [Build-Publish]
+    needs: [Build]
     name: Publish
     runs-on: ubuntu-latest
     environment:
