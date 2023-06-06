@@ -1,8 +1,14 @@
+import pandas as pd
 import pytest
 from moto import mock_ecr
 
-from sagemaker_rightline.model import Configuration, Report, ValidationFailedError
-from sagemaker_rightline.rules import Equals
+from sagemaker_rightline.model import (
+    Configuration,
+    Report,
+    Validation,
+    ValidationFailedError,
+)
+from sagemaker_rightline.rules import Equals, Rule
 from sagemaker_rightline.validations import (
     ContainerImage,
     StepImagesExistOnEcr,
@@ -77,13 +83,15 @@ def test_configuration_make_report(results) -> None:
 
 @mock_ecr
 @pytest.mark.parametrize(
-    "report_length,validations",
+    "expected_report_length,validations, return_df",
     [
-        [1, [StepImagesExistOnEcr()]],
-        [2, [StepImagesExistOnEcr(), StepImagesExistOnEcr()]],
+        [1, [StepImagesExistOnEcr()], False],
+        [2, [StepImagesExistOnEcr(), StepImagesExistOnEcr()], True],
     ],
 )
-def test_configuration_run(sagemaker_pipeline, ecr_client, report_length, validations) -> None:
+def test_configuration_run(
+    sagemaker_pipeline, ecr_client, expected_report_length, validations, return_df
+) -> None:
     """Test run method of Configuration class."""
     container_images = [
         ContainerImage(uri=IMAGE_1_URI),
@@ -91,9 +99,32 @@ def test_configuration_run(sagemaker_pipeline, ecr_client, report_length, valida
     ]
     with create_image(ecr_client, container_images):
         cf = Configuration(validations=validations, sagemaker_pipeline=sagemaker_pipeline)
-        report = cf.run(fail_fast=False)
+        report = cf.run(fail_fast=False, return_df=return_df)
 
-    assert len(report.results) == report_length
+    if return_df:
+        assert isinstance(report, pd.DataFrame)
+        observed_report_len = len(report)
+    else:
+        assert isinstance(report, Report)
+        observed_report_len = len(report.results)
+    assert observed_report_len == expected_report_length
+
+
+def test_configuration_handle_empty_results(sagemaker_pipeline) -> None:
+    """Test run method of Configuration class."""
+    validation = StepKmsKeyId(
+        step_name="sm_processing_step_sklearn",
+        rule=Equals(),
+        kms_key_id_expected="some/kms-key-alias",
+    )
+    cf = Configuration(validations=[validation], sagemaker_pipeline=sagemaker_pipeline)
+    validation_result = cf._handle_empty_results(
+        result=None,
+        validation=validation,
+    )
+    assert isinstance(validation_result, ValidationResult)
+    assert "not return any results" in validation_result.message
+    assert not validation_result.success
 
 
 @mock_ecr
