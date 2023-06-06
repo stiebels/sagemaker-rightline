@@ -246,13 +246,15 @@ class Configuration:
         return report
 
     @staticmethod
-    def _handle_empty_results(result: ValidationResult, validation: Validation) -> ValidationResult:
+    def _handle_empty_results(
+        result: Optional[ValidationResult], validation: Validation
+    ) -> ValidationResult:
         """Handle empty results. If a Validation does not return any results
         (e.g. when no observation were made), a warning is logged and a
         ValidationResult indicating this is added to the result dict.
 
         :param result: validation_result.
-        :type result: ValidationResult
+        :type result: Optional[ValidationResult]
         :param validation: Validation object.
         :type validation: Validation
         :return: validation result.
@@ -261,14 +263,15 @@ class Configuration:
         if not result:
             logging.warning(
                 f"Validation {validation.name} did not return any results. "
-                f"Please check if the path {validation.path} is correct."
+                f"Please check if the paths {validation.paths} are correct."
             )
             return ValidationResult(
                 validation_name=validation.name,
                 success=False,
                 message=f"Validation {validation.name} did not return any results. "
-                f"Please check if the path {validation.path} is correct.",
-                subject=validation.path,
+                f"Please check if the paths {validation.paths} are correct.",
+                subject=validation.paths,
+                negative=False,
             )
         return result
 
