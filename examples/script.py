@@ -12,6 +12,8 @@ from sagemaker_rightline.validations import (
     StepKmsKeyId,
     StepLambdaFunctionExists,
     StepNetworkConfig,
+    StepRoleNameAsExpected,
+    StepRoleNameExists,
 )
 from tests.fixtures.image_details import IMAGE_1_URI, IMAGE_2_URI
 from tests.fixtures.pipeline import get_sagemaker_pipeline
@@ -47,8 +49,7 @@ if __name__ == "__main__":
                 ),
                 StepKmsKeyId(
                     kms_key_id_expected="some/kms-key-alias",
-                    step_name="sm_training_step_sklearn",
-                    # optional: if not set, will check all steps [applies to all Step* validations
+                    step_name="sm_training_step_sklearn",  # if not set, will check all steps
                     rule=Equals(),
                 ),
                 StepNetworkConfig(
@@ -60,6 +61,12 @@ if __name__ == "__main__":
                     rule=Equals(negative=True),
                 ),
                 StepLambdaFunctionExists(),
+                StepRoleNameExists(),
+                StepRoleNameAsExpected(
+                    role_name_expected="some-role-name",
+                    step_name="sm_training_step_sklearn",  # if not set, will check all steps
+                    rule=Equals(),
+                ),
             ]
             cm = Configuration(
                 validations=validations,

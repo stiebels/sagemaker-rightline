@@ -38,6 +38,8 @@ The following `Validations` are currently implemented:
   - `StepKmsKeyId`
   - `StepNetworkConfig`
   - `StepLambdaFunctionExists`
+  - `StepRoleNameExists`
+  - `StepRoleNameAsExpected`
 
 In most cases, a `Validation` subclass requires passing a `Rule` object to its constructor.
 
@@ -72,6 +74,8 @@ from sagemaker_rightline.validations import (
     StepKmsKeyId,
     StepNetworkConfig,
     StepLambdaFunctionExists,
+    StepRoleNameExists,
+    StepRoleNameAsExpected,
 )
 
 # Import a dummy pipeline
@@ -104,6 +108,12 @@ validations = [
         rule=Equals(negative=True),
     ),
     StepLambdaFunctionExists(),
+    StepRoleNameExists(),
+    StepRoleNameAsExpected(
+        role_name_expected="some-role-name",
+        step_name="sm_training_step_sklearn",  # optional: if not set, will check all steps
+        rule=Equals(),
+    ),
 ]
 
 # Add Validations and SageMaker Pipeline to Configuration

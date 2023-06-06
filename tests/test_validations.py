@@ -12,11 +12,14 @@ from sagemaker_rightline.validations import (
     StepKmsKeyId,
     StepLambdaFunctionExists,
     StepNetworkConfig,
+    StepRoleNameAsExpected,
+    StepRoleNameExists,
 )
 from tests.fixtures.constants import (
     TEST_ACCOUNT_ID,
     TEST_LAMBDA_FUNC_NAME,
     TEST_REGION_NAME,
+    TEST_ROLE_NAME,
 )
 from tests.fixtures.image_details import (
     IMAGE_1_REPOSITORY_NAME,
@@ -25,7 +28,14 @@ from tests.fixtures.image_details import (
     IMAGE_2_URI,
 )
 from tests.fixtures.pipeline import get_sagemaker_pipeline
-from tests.utils import create_image, create_lambda_function, ecr_client, lambda_client
+from tests.utils import (
+    create_iam_role,
+    create_image,
+    create_lambda_function,
+    ecr_client,
+    iam_client,
+    lambda_client,
+)
 
 
 @pytest.fixture
@@ -287,8 +297,8 @@ def test_step_network_config_filter(
 
 @mock_iam
 @mock_lambda
-def test_lambda_function_exists_positive(lambda_client, sagemaker_pipeline) -> None:
-    with create_lambda_function(lambda_client, [TEST_LAMBDA_FUNC_NAME]):
+def test_lambda_function_exists_positive(lambda_client, iam_client, sagemaker_pipeline) -> None:
+    with create_lambda_function(lambda_client, iam_client, [TEST_LAMBDA_FUNC_NAME]):
         lambda_function_exists = StepLambdaFunctionExists()
         result = lambda_function_exists.run(sagemaker_pipeline)
     assert result.success
@@ -299,3 +309,51 @@ def test_lambda_function_exists_negative(lambda_client, sagemaker_pipeline) -> N
     lambda_function_exists = StepLambdaFunctionExists()
     result = lambda_function_exists.run(sagemaker_pipeline)
     assert not result.success
+
+
+@mock_iam
+def test_role_exists_positive(iam_client, sagemaker_pipeline) -> None:
+    with create_iam_role(iam_client, [TEST_ROLE_NAME]):
+        role_exists = StepRoleNameExists()
+        result = role_exists.run(sagemaker_pipeline)
+    assert result.success
+
+
+@mock_iam
+def test_role_exists_negative(iam_client, sagemaker_pipeline) -> None:
+    role_exists = StepRoleNameExists()
+    result = role_exists.run(sagemaker_pipeline)
+    assert not result.success
+
+
+@pytest.mark.parametrize(
+    "role_name_expected,success",
+    [
+        [TEST_ROLE_NAME, True],
+        ["nonexistent-role-name", False],
+    ],
+)
+def test_step_role_filter(role_name_expected, success, sagemaker_pipeline) -> None:
+    step_role_validation = StepRoleNameAsExpected(
+        role_name_expected=role_name_expected,
+        step_name="sm_processing_step_sklearn",
+        rule=Equals(),
+    )
+    result = step_role_validation.run(sagemaker_pipeline)
+    assert result.success == success
+
+
+@pytest.mark.parametrize(
+    "role_name_expected,success",
+    [
+        [TEST_ROLE_NAME, True],
+        ["nonexistent-role-name", False],
+    ],
+)
+def test_step_role_no_filter(role_name_expected, success, sagemaker_pipeline) -> None:
+    step_role_validation = StepRoleNameAsExpected(
+        role_name_expected=role_name_expected,
+        rule=Equals(),
+    )
+    result = step_role_validation.run(sagemaker_pipeline)
+    assert result.success == success
