@@ -73,7 +73,7 @@ def test_validation_result() -> None:
 
 
 @mock_ecr
-def test_image_exists_run_positive(ecr_client, sagemaker_pipeline) -> None:
+def test_step_image_exists_run_positive(ecr_client, sagemaker_pipeline) -> None:
     container_images = [
         ContainerImage(uri=IMAGE_1_URI),
         ContainerImage(uri=IMAGE_2_URI),
@@ -88,12 +88,27 @@ def test_image_exists_run_positive(ecr_client, sagemaker_pipeline) -> None:
 
 
 @mock_ecr
-def test_image_exists_run_negative(sagemaker_pipeline) -> None:
+def test_step_image_exists_run_negative(sagemaker_pipeline) -> None:
     image_exists = StepImagesExistOnEcr()
     result = image_exists.run(sagemaker_pipeline)
 
     assert not result.success
     assert result.message.endswith(" not exist.")
+
+
+def test_step_image_exists_wrong_client() -> None:
+    with pytest.raises(ValueError):
+        _ = StepImagesExistOnEcr(boto3_client="not-a-boto3-client")
+
+
+def test_step_lambda_function_exists_wrong_client() -> None:
+    with pytest.raises(ValueError):
+        _ = StepLambdaFunctionExists(boto3_client="not-a-boto3-client")
+
+
+def test_step_role_name_exists_wrong_client() -> None:
+    with pytest.raises(ValueError):
+        _ = StepRoleNameExists(boto3_client="not-a-boto3-client")
 
 
 @pytest.mark.parametrize(
@@ -241,8 +256,25 @@ def test_step_network_config(
         network_config_expected=network_config_expected,
         rule=Equals(),
     )
-    results = step_network_config.run(sagemaker_pipeline)
-    assert not results.success
+    result = step_network_config.run(sagemaker_pipeline)
+    assert not result.success
+
+
+def test_step_network_config_none_observed(
+    sagemaker_pipeline,
+) -> None:
+    network_config_expected = NetworkConfig(
+        enable_network_isolation=True,
+        security_group_ids=["sg-12345"],
+        subnets=["subnet-12345"],
+        encrypt_inter_container_traffic=True,
+    )
+    step_network_config = StepNetworkConfig(
+        network_config_expected=network_config_expected,
+        rule=Equals(),
+    )
+    result = step_network_config.rule.run([None], network_config_expected, step_network_config.name)
+    assert not result.success
 
 
 @pytest.mark.parametrize(
