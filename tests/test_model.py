@@ -1,7 +1,7 @@
 import pytest
 from moto import mock_ecr
 
-from sagemaker_rightline.model import Configuration, Report
+from sagemaker_rightline.model import Configuration, Report, ValidationFailedError
 from sagemaker_rightline.rules import Equals
 from sagemaker_rightline.validations import (
     ContainerImage,
@@ -107,8 +107,8 @@ def test_configuration_run(sagemaker_pipeline, ecr_client, report_length, valida
 def test_configuration_run_fail_fast(sagemaker_pipeline, report_length, validations) -> None:
     """Test run method of Configuration class."""
     cf = Configuration(validations=validations, sagemaker_pipeline=sagemaker_pipeline)
-    report = cf.run(fail_fast=True)
-    assert len(report.results) == report_length
+    with pytest.raises(ValidationFailedError):
+        cf.run(fail_fast=True)
 
 
 def test_report_to_df() -> None:
@@ -160,3 +160,16 @@ def test_validation_get_attribute_no_filter(sagemaker_pipeline) -> None:
 
     validation = StepImagesExistOnEcr()
     assert validation.get_attribute(sagemaker_pipeline) == [IMAGE_1_URI, IMAGE_2_URI, IMAGE_1_URI]
+
+
+def test_validation_failed_error():
+    """Test ValidationFailedError class."""
+    test_message = "test-message"
+    with pytest.raises(ValidationFailedError):
+        try:
+            raise ValidationFailedError(test_message)
+        except ValidationFailedError as e:
+            assert e.message == test_message
+            assert isinstance(e, ValidationFailedError)
+            assert isinstance(e, Exception)
+            raise
