@@ -1,7 +1,7 @@
 import pytest
 from moto import mock_ecr
 
-from sagemaker_rightline.model import Configuration, Report
+from sagemaker_rightline.model import Configuration, Report, ValidationFailedError
 from sagemaker_rightline.rules import Equals
 from sagemaker_rightline.validations import (
     ContainerImage,
@@ -98,17 +98,21 @@ def test_configuration_run(sagemaker_pipeline, ecr_client, report_length, valida
 
 @mock_ecr
 @pytest.mark.parametrize(
-    "report_length,validations",
+    "raises_error,validations",
     [
-        [1, [StepImagesExistOnEcr()]],
-        [1, [StepImagesExistOnEcr(), StepImagesExistOnEcr()]],
+        [False, [StepImagesExistOnEcr()]],
+        [True, [StepImagesExistOnEcr(), StepImagesExistOnEcr()]],
     ],
 )
-def test_configuration_run_fail_fast(sagemaker_pipeline, report_length, validations) -> None:
+def test_configuration_run_fail_fast(sagemaker_pipeline, raises_error, validations) -> None:
     """Test run method of Configuration class."""
     cf = Configuration(validations=validations, sagemaker_pipeline=sagemaker_pipeline)
-    report = cf.run(fail_fast=True)
-    assert len(report.results) == report_length
+    if raises_error:
+        with pytest.raises(ValidationFailedError):
+            cf.run(fail_fast=True)
+    else:
+        report = cf.run(fail_fast=True)
+        assert len(report.results) == 1
 
 
 def test_report_to_df() -> None:
@@ -160,3 +164,23 @@ def test_validation_get_attribute_no_filter(sagemaker_pipeline) -> None:
 
     validation = StepImagesExistOnEcr()
     assert validation.get_attribute(sagemaker_pipeline) == [IMAGE_1_URI, IMAGE_2_URI, IMAGE_1_URI]
+
+
+def test_validation_failed_error():
+    """Test ValidationFailedError class."""
+    validation_result = ValidationResult(
+        success=False,
+        negative=False,
+        message="test-message",
+        subject="test-subject",
+        validation_name="test",
+    )
+    with pytest.raises(ValidationFailedError):
+        try:
+            raise ValidationFailedError(validation_result)
+        except ValidationFailedError as e:
+            assert isinstance(e.message, str)
+            assert e.validation_result == validation_result
+            assert isinstance(e, ValidationFailedError)
+            assert isinstance(e, Exception)
+            raise

@@ -172,6 +172,22 @@ class Report:
         return df.reset_index(drop=True)
 
 
+class ValidationFailedError(Exception):
+    """Validation exception class."""
+
+    def __init__(self, validation_result: ValidationResult) -> None:
+        """Initialize a ValidationFailedError object.
+
+        :param validation: error message
+        :type validation: Validation
+        :return: None
+        :rtype: None
+        """
+        self.validation_result = validation_result
+        self.message = f"Validation failed: {validation_result.__dict__}"
+        super().__init__(self.message)
+
+
 class Configuration:
     """Configuration class."""
 
@@ -263,6 +279,7 @@ class Configuration:
         :type fail_fast: bool
         :param return_df: If True, return a pandas dataframe instead of a Report object.
         :type return_df: bool
+        :raises ValidationFailedError: If fail_fast is True and a validation fails.
         :return: Report object or pandas dataframe.
         :rtype: Report or dict
         """
@@ -276,5 +293,5 @@ class Configuration:
                     "Validation failed and fail_fast is set to True. Stopping validation "
                     "prematurely."
                 )
-                break
+                raise ValidationFailedError(result)
         return self._make_report(results, return_df)
