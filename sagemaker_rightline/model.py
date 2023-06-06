@@ -10,21 +10,6 @@ import pandas as pd
 from sagemaker.workflow.pipeline import Pipeline
 
 
-class ValidationFailedError(Exception):
-    """Validation exception class."""
-
-    def __init__(self, message: str) -> None:
-        """Initialize a ValidationFailedError object.
-
-        :param message: error message
-        :type message: str
-        :return: None
-        :rtype: None
-        """
-        self.message = message
-        super().__init__(self.message)
-
-
 @dataclass
 class ValidationResult:
     """Validation result dataclass."""
@@ -187,6 +172,22 @@ class Report:
         return df.reset_index(drop=True)
 
 
+class ValidationFailedError(Exception):
+    """Validation exception class."""
+
+    def __init__(self, validation_result: ValidationResult) -> None:
+        """Initialize a ValidationFailedError object.
+
+        :param validation: error message
+        :type validation: Validation
+        :return: None
+        :rtype: None
+        """
+        self.validation_result = validation_result
+        self.message = f"Validation failed: {validation_result.__dict__}"
+        super().__init__(self.message)
+
+
 class Configuration:
     """Configuration class."""
 
@@ -292,8 +293,5 @@ class Configuration:
                     "Validation failed and fail_fast is set to True. Stopping validation "
                     "prematurely."
                 )
-                raise ValidationFailedError(
-                    f"Validation {validation.name} failed and fail_fast was set to True. "
-                    f"Validation details: {result.__dict__}"
-                )
+                raise ValidationFailedError(result)
         return self._make_report(results, return_df)

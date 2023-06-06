@@ -98,17 +98,21 @@ def test_configuration_run(sagemaker_pipeline, ecr_client, report_length, valida
 
 @mock_ecr
 @pytest.mark.parametrize(
-    "report_length,validations",
+    "raises_error,validations",
     [
-        [1, [StepImagesExistOnEcr()]],
-        [1, [StepImagesExistOnEcr(), StepImagesExistOnEcr()]],
+        [False, [StepImagesExistOnEcr()]],
+        [True, [StepImagesExistOnEcr(), StepImagesExistOnEcr()]],
     ],
 )
-def test_configuration_run_fail_fast(sagemaker_pipeline, report_length, validations) -> None:
+def test_configuration_run_fail_fast(sagemaker_pipeline, raises_error, validations) -> None:
     """Test run method of Configuration class."""
     cf = Configuration(validations=validations, sagemaker_pipeline=sagemaker_pipeline)
-    with pytest.raises(ValidationFailedError):
-        cf.run(fail_fast=True)
+    if raises_error:
+        with pytest.raises(ValidationFailedError):
+            cf.run(fail_fast=True)
+    else:
+        report = cf.run(fail_fast=True)
+        assert len(report.results) == 1
 
 
 def test_report_to_df() -> None:
@@ -164,12 +168,19 @@ def test_validation_get_attribute_no_filter(sagemaker_pipeline) -> None:
 
 def test_validation_failed_error():
     """Test ValidationFailedError class."""
-    test_message = "test-message"
+    validation_result = ValidationResult(
+        success=False,
+        negative=False,
+        message="test-message",
+        subject="test-subject",
+        validation_name="test",
+    )
     with pytest.raises(ValidationFailedError):
         try:
-            raise ValidationFailedError(test_message)
+            raise ValidationFailedError(validation_result)
         except ValidationFailedError as e:
-            assert e.message == test_message
+            assert isinstance(e.message, str)
+            assert e.validation_result == validation_result
             assert isinstance(e, ValidationFailedError)
             assert isinstance(e, Exception)
             raise
