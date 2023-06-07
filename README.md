@@ -40,6 +40,7 @@ The following `Validations` are currently implemented:
   - `StepLambdaFunctionExists`
   - `StepRoleNameExists`
   - `StepRoleNameAsExpected`
+  - `StepTagsAsExpected`
 
 In most cases, a `Validation` subclass requires passing a `Rule` object to its constructor.
 
