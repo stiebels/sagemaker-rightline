@@ -33,10 +33,10 @@ For example, the `StepImagesExistOnEcr` supports `Processing` and `Training` ste
 Steps of the named types of the `Pipeline` object reference indeed exist on the target ECR.
 
 The following `Validations` are currently implemented:
-  - `PipelineParameters`
+  - `PipelineParametersAsExpected`
   - `StepImagesExistOnEcr`
-  - `StepKmsKeyId`
-  - `StepNetworkConfig`
+  - `StepKmsKeyIdAsExpected`
+  - `StepNetworkConfigAsExpected`
   - `StepLambdaFunctionExists`
   - `StepRoleNameExists`
   - `StepRoleNameAsExpected`
@@ -46,7 +46,7 @@ In most cases, a `Validation` subclass requires passing a `Rule` object to its c
 ### 📜 Rules
 A `Rule` is a class that inherits from the `Rule` base class.
 It is responsible for defining the rule that a `Validation` checks for.
-For example, passing the list of expected KMSKeyIDs and the `Rule` `Equals` to `StepKmsKeyId` will check that
+For example, passing the list of expected KMSKeyIDs and the `Rule` `Equals` to `StepKmsKeyIdAsExpected` will check that
 all `Step` objects of the `Pipeline` object have a `KmsKeyId` property that matches the passed KMSKeyIDs.
 
 Note that not all `Validations` require a `Rule` object, e.g. `StepImagesExistOnEcr`.
@@ -63,29 +63,32 @@ It contains the results of the `Validations` that were run against the `Pipeline
 to allow for further analysis.
 
 ## Usage
+
 ```python
 from sagemaker.processing import NetworkConfig
 from sagemaker.workflow.parameters import ParameterString
 from sagemaker_rightline.model import Configuration
 from sagemaker_rightline.rules import Contains, Equals
 from sagemaker_rightline.validations import (
-    PipelineParameters,
+    PipelineParametersAsExpected,
     StepImagesExistOnEcr,
-    StepKmsKeyId,
-    StepNetworkConfig,
+    StepKmsKeyIdAsExpected,
+    StepNetworkConfigAsExpected,
     StepLambdaFunctionExists,
     StepRoleNameExists,
     StepRoleNameAsExpected,
+    StepTagsAsExpected,
 )
 
 # Import a dummy pipeline
 from tests.fixtures.pipeline import get_sagemaker_pipeline
+
 sm_pipeline = get_sagemaker_pipeline()
 
 # Define Validations
 validations = [
     StepImagesExistOnEcr(),
-    PipelineParameters(
+    PipelineParametersAsExpected(
         parameters_expected=[
             ParameterString(
                 name="parameter-1",
@@ -94,12 +97,12 @@ validations = [
         ],
         rule=Contains(),
     ),
-    StepKmsKeyId(
+    StepKmsKeyIdAsExpected(
         kms_key_id_expected="some/kms-key-alias",
         step_name="sm_training_step_sklearn",  # optional: if not set, will check all steps
         rule=Equals(),
     ),
-    StepNetworkConfig(
+    StepNetworkConfigAsExpected(
         network_config_expected=NetworkConfig(
             enable_network_isolation=False,
             security_group_ids=["sg-1234567890"],
@@ -111,6 +114,13 @@ validations = [
     StepRoleNameExists(),
     StepRoleNameAsExpected(
         role_name_expected="some-role-name",
+        step_name="sm_training_step_sklearn",  # optional: if not set, will check all steps
+        rule=Equals(),
+    ),
+    StepTagsAsExpected(
+        tags_expected=[{
+            "some-key": "some-value",
+        }],
         step_name="sm_training_step_sklearn",  # optional: if not set, will check all steps
         rule=Equals(),
     ),

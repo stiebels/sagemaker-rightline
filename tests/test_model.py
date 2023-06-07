@@ -12,7 +12,7 @@ from sagemaker_rightline.rules import Equals, Rule
 from sagemaker_rightline.validations import (
     ContainerImage,
     StepImagesExistOnEcr,
-    StepKmsKeyId,
+    StepKmsKeyIdAsExpected,
     ValidationResult,
 )
 from tests.fixtures.image_details import IMAGE_1_URI, IMAGE_2_URI
@@ -112,7 +112,7 @@ def test_configuration_run(
 
 def test_configuration_handle_empty_results(sagemaker_pipeline) -> None:
     """Test run method of Configuration class."""
-    validation = StepKmsKeyId(
+    validation = StepKmsKeyIdAsExpected(
         step_name="sm_processing_step_sklearn",
         rule=Equals(),
         kms_key_id_expected="some/kms-key-alias",
@@ -172,7 +172,7 @@ def test_report_to_df() -> None:
 def test_validation_get_attribute_filter(sagemaker_pipeline) -> None:
     """Test get_attribute method of Validation class."""
     kms_key_alias_expected = "some/kms-key-alias"
-    validation = StepKmsKeyId(
+    validation = StepKmsKeyIdAsExpected(
         step_name="sm_processing_step_sklearn",
         rule=Equals(),
         kms_key_id_expected=kms_key_alias_expected,
@@ -183,7 +183,7 @@ def test_validation_get_attribute_filter(sagemaker_pipeline) -> None:
 def test_validation_get_attribute_no_filter(sagemaker_pipeline) -> None:
     """Test get_attribute method of Validation class."""
     kms_key_alias_expected = "some/kms-key-alias"
-    validation = StepKmsKeyId(
+    validation = StepKmsKeyIdAsExpected(
         rule=Equals(),
         kms_key_id_expected=kms_key_alias_expected,
     )

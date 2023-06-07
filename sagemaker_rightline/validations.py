@@ -1,18 +1,19 @@
 import re
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import boto3
 from botocore.exceptions import ClientError
 from sagemaker.estimator import Estimator
 from sagemaker.processing import NetworkConfig
+from sagemaker.workflow.entities import PipelineVariable
 from sagemaker.workflow.parameters import Parameter
 from sagemaker.workflow.pipeline import Pipeline
 
 from sagemaker_rightline.model import Rule, Validation, ValidationResult
 
 
-class PipelineParameters(Validation):
+class PipelineParametersAsExpected(Validation):
     """Validate Pipeline Parameters.
 
     This validation will check if the parameters in the pipeline are as
@@ -23,7 +24,7 @@ class PipelineParameters(Validation):
         self, parameters_expected: List[Parameter], rule: Rule, ignore_default_value: bool = False
     ) -> None:
         """Validate Pipeline Parameters."""
-        super().__init__(name="PipelineParameters", paths=[".parameters[]"], rule=rule)
+        super().__init__(name="PipelineParametersAsExpected", paths=[".parameters[]"], rule=rule)
         if not parameters_expected:
             raise ValueError("parameters_expected cannot be empty.")
         self.parameters_expected: List[Parameter] = parameters_expected
@@ -45,7 +46,7 @@ class PipelineParameters(Validation):
         return result
 
 
-class StepKmsKeyId(Validation):
+class StepKmsKeyIdAsExpected(Validation):
     """Validate KmsKeyId or output_kms_key in Step.
 
     Supported only for ProcessingStep and TrainingStep (output_kms_key).
@@ -56,10 +57,10 @@ class StepKmsKeyId(Validation):
     def __init__(
         self, kms_key_id_expected: str, rule: Rule, step_name: Optional[str] = None
     ) -> None:
-        """Initialize StepKmsKeyId validation."""
+        """Initialize StepKmsKeyIdAsExpected validation."""
         self.step_filter: str = f"name=={step_name}" if step_name else ""
         super().__init__(
-            name="StepKmsKeyId",
+            name="StepKmsKeyIdAsExpected",
             paths=[
                 f".steps[{self.step_filter} && step_type/value==Processing].kms_key",
                 f".steps[{self.step_filter} && step_type/value==Training].estimator.output_kms_key",
@@ -181,7 +182,7 @@ class StepImagesExistOnEcr(Validation):
         )
 
 
-class StepNetworkConfig(Validation):
+class StepNetworkConfigAsExpected(Validation):
     """Validate NetworkConfig in Step.
 
     This Validation currently supports only ProcessingStep. This
@@ -192,7 +193,7 @@ class StepNetworkConfig(Validation):
     def __init__(
         self, network_config_expected: NetworkConfig, rule: Rule, step_name: Optional[str] = None
     ) -> None:
-        """Initialize StepNetworkConfig validation.
+        """Initialize StepNetworkConfigAsExpected validation.
 
         :param network_config_expected: Expected NetworkConfig
         :type network_config_expected: NetworkConfig
@@ -205,7 +206,7 @@ class StepNetworkConfig(Validation):
         """
         self.step_filter: str = f"name=={step_name}" if step_name else ""
         super().__init__(
-            name="StepNetworkConfig",
+            name="StepNetworkConfigAsExpected",
             paths=[
                 f".steps[{self.step_filter}].processor.network_config",
             ],
@@ -262,8 +263,10 @@ class StepNetworkConfig(Validation):
             and step.name == self.step_filter.replace("name==", "")
         ]
         if training_step_estimators:
-            network_configs_observed += StepNetworkConfig.get_training_step_network_config(
-                training_step_estimators
+            network_configs_observed += (
+                StepNetworkConfigAsExpected.get_training_step_network_config(
+                    training_step_estimators
+                )
             )
 
         network_configs_observed_dict = []
@@ -485,3 +488,56 @@ class StepRoleNameExists(Validation):
                 subject=str(role_name_observed),
                 validation_name=self.name,
             )
+
+
+class StepTagsAsExpected(Validation):
+    """Validate Tags of Pipeline Step.
+
+    Supported only for ProcessingStep and TrainingStep. This validation
+    is useful when you want to ensure that the Tags of a Pipeline Step
+    are as expected.
+    """
+
+    def __init__(
+        self,
+        tags_expected: List[Dict[str, Union[str, PipelineVariable]]],
+        rule: Rule,
+        step_name: Optional[str] = None,
+    ) -> None:
+        """Initialize StepTagsAsExpected validation.
+
+        :param tags_expected: Expected Tags
+        :type tags_expected: List[Dict[str, Union[str, PipelineVariable]]]
+        :param rule: Rule to use for validation
+        :type rule: Rule
+        :param step_name: Name of Step to validate, defaults to None
+        :type step_name: Optional[str], optional
+        :return: None
+        :rtype: None
+        """
+        self.step_filter: str = f"name=={step_name}" if step_name else ""
+
+        super().__init__(
+            name="StepTagsAsExpected",
+            paths=[
+                f".steps[{self.step_filter} && step_type/value==Processing].processor.tags",
+                f".steps[{self.step_filter} && step_type/value==Training].estimator.tags",
+            ],
+            rule=rule,
+        )
+        self.tags_expected: List[Dict[str, Union[str, PipelineVariable]]] = tags_expected
+
+    def run(
+        self,
+        sagemaker_pipeline: Pipeline,
+    ) -> ValidationResult:
+        """Runs validation of Parameters on Pipeline.
+
+        :param sagemaker_pipeline: SageMaker Pipeline
+        :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
+        :return: validation result
+        :rtype: ValidationResult
+        """
+        tags_observed = self.get_attribute(sagemaker_pipeline)
+        result = self.rule.run(tags_observed[0], self.tags_expected, self.name)
+        return result

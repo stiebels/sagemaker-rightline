@@ -34,6 +34,10 @@ def get_sagemaker_pipeline(
         role=TEST_ROLE_ARN,
         image_uri=IMAGE_1_URI,
         network_config=network_config,
+        tags=[
+            {"Key": "some-key", "Value": "some-value"},
+            {"Key": "some-key-2", "Value": "some-value-2"},
+        ],
     )
     sm_processor_spark = PySparkProcessor(
         base_job_name="sm_processors",
@@ -42,6 +46,7 @@ def get_sagemaker_pipeline(
         instance_type="ml.m5.xlarge",
         instance_count=2,
         network_config=network_config,
+        tags=[{"Key": "some-key", "Value": "some-value"}],
     )
     sm_trainer_sklearn = SKLearn(
         entry_point=script_path,
@@ -53,6 +58,13 @@ def get_sagemaker_pipeline(
         security_group_ids=network_config.security_group_ids,
         subnets=network_config.subnets,
         encrypt_inter_container_traffic=network_config.encrypt_inter_container_traffic,
+        tags=[
+            {"Key": "some-key", "Value": "some-value"},
+            {
+                "Key": "some-key",
+                "Value": ParameterString(name="parameter-1", default_value="some-value-1"),
+            },
+        ],
     )
 
     dummy_bucket = "dummy-bucket"

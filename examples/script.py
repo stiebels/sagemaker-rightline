@@ -7,13 +7,14 @@ from sagemaker_rightline.model import Configuration
 from sagemaker_rightline.rules import Contains, Equals
 from sagemaker_rightline.validations import (
     ContainerImage,
-    PipelineParameters,
+    PipelineParametersAsExpected,
     StepImagesExistOnEcr,
-    StepKmsKeyId,
+    StepKmsKeyIdAsExpected,
     StepLambdaFunctionExists,
-    StepNetworkConfig,
+    StepNetworkConfigAsExpected,
     StepRoleNameAsExpected,
     StepRoleNameExists,
+    StepTagsAsExpected,
 )
 from tests.fixtures.image_details import IMAGE_1_URI, IMAGE_2_URI
 from tests.fixtures.pipeline import get_sagemaker_pipeline
@@ -38,7 +39,7 @@ if __name__ == "__main__":
         with create_image(ecr_client, container_images):
             validations = [
                 StepImagesExistOnEcr(),
-                PipelineParameters(
+                PipelineParametersAsExpected(
                     parameters_expected=[
                         ParameterString(
                             name="parameter-1",
@@ -47,12 +48,12 @@ if __name__ == "__main__":
                     ],
                     rule=Contains(),
                 ),
-                StepKmsKeyId(
+                StepKmsKeyIdAsExpected(
                     kms_key_id_expected="some/kms-key-alias",
                     step_name="sm_training_step_sklearn",  # if not set, will check all steps
                     rule=Equals(),
                 ),
-                StepNetworkConfig(
+                StepNetworkConfigAsExpected(
                     network_config_expected=NetworkConfig(
                         enable_network_isolation=False,
                         security_group_ids=["sg-1234567890"],
@@ -64,6 +65,15 @@ if __name__ == "__main__":
                 StepRoleNameExists(),
                 StepRoleNameAsExpected(
                     role_name_expected="some-role-name",
+                    step_name="sm_training_step_sklearn",  # if not set, will check all steps
+                    rule=Equals(),
+                ),
+                StepTagsAsExpected(
+                    tags_expected=[
+                        {
+                            "some-key": "some-value",
+                        }
+                    ],
                     step_name="sm_training_step_sklearn",  # if not set, will check all steps
                     rule=Equals(),
                 ),
