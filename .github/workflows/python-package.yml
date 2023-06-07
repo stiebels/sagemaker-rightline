@@ -52,3 +52,5 @@ jobs:
     name: Ready
     needs: [Check-Test-Build]
     uses: ./.github/workflows/ready.yml
+    with:
+      message: "Pre-Commit, test and build have been successful."

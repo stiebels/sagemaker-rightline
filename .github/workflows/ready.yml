@@ -1,3 +1,5 @@
+name: Ready
+
 on:
   workflow_call:
     inputs:

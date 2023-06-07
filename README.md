@@ -130,6 +130,9 @@ df
 ```
 ![img.png](./docs/report.png)
 
+## Release
+Publishing a new version to PyPI is done via the `Release` functionality.
+This will trigger the `publish.yml` workflow, creating a new release with the version from the tag and publish the package to PyPI.
 
 ## Contributing
 Contributions welcome! We'll add a guide shortly.
