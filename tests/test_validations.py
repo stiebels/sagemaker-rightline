@@ -4,16 +4,17 @@ from sagemaker.processing import NetworkConfig
 from sagemaker.workflow.parameters import ParameterString
 
 from sagemaker_rightline.model import Validation, ValidationResult
-from sagemaker_rightline.rules import Equals
+from sagemaker_rightline.rules import Contains, Equals
 from sagemaker_rightline.validations import (
     ContainerImage,
-    PipelineParameters,
-    StepImagesExistOnEcr,
-    StepKmsKeyId,
+    PipelineParametersAsExpected,
+    StepImagesExist,
+    StepKmsKeyIdAsExpected,
     StepLambdaFunctionExists,
-    StepNetworkConfig,
+    StepNetworkConfigAsExpected,
     StepRoleNameAsExpected,
     StepRoleNameExists,
+    StepTagsAsExpected,
 )
 from tests.fixtures.constants import (
     TEST_ACCOUNT_ID,
@@ -79,7 +80,7 @@ def test_step_image_exists_run_positive(ecr_client, sagemaker_pipeline) -> None:
         ContainerImage(uri=IMAGE_2_URI),
     ]
     with create_image(ecr_client, container_images):
-        image_exists = StepImagesExistOnEcr()
+        image_exists = StepImagesExist()
         result = image_exists.run(sagemaker_pipeline)
 
     assert result.success
@@ -89,7 +90,7 @@ def test_step_image_exists_run_positive(ecr_client, sagemaker_pipeline) -> None:
 
 @mock_ecr
 def test_step_image_exists_run_negative(sagemaker_pipeline) -> None:
-    image_exists = StepImagesExistOnEcr()
+    image_exists = StepImagesExist()
     result = image_exists.run(sagemaker_pipeline)
 
     assert not result.success
@@ -98,7 +99,7 @@ def test_step_image_exists_run_negative(sagemaker_pipeline) -> None:
 
 def test_step_image_exists_wrong_client() -> None:
     with pytest.raises(ValueError):
-        _ = StepImagesExistOnEcr(boto3_client="not-a-boto3-client")
+        _ = StepImagesExist(boto3_client="not-a-boto3-client")
 
 
 def test_step_lambda_function_exists_wrong_client() -> None:
@@ -139,7 +140,7 @@ def test_step_role_name_exists_wrong_client() -> None:
     ],
 )
 def test_pipeline_parameters_equals(parameters_expected, success, sagemaker_pipeline) -> None:
-    pipeline_parameters = PipelineParameters(
+    pipeline_parameters = PipelineParametersAsExpected(
         parameters_expected=parameters_expected,
         rule=Equals(),
     )
@@ -171,7 +172,7 @@ def test_pipeline_parameters_equals(parameters_expected, success, sagemaker_pipe
 def test_pipeline_parameters_ignore_default_value(
     parameters_expected, ignore_default_value, success, sagemaker_pipeline
 ) -> None:
-    pipeline_parameters = PipelineParameters(
+    pipeline_parameters = PipelineParametersAsExpected(
         parameters_expected=parameters_expected,
         ignore_default_value=ignore_default_value,
         rule=Equals(),
@@ -182,7 +183,7 @@ def test_pipeline_parameters_ignore_default_value(
 
 def test_has_parameters_raise() -> None:
     with pytest.raises(ValueError):
-        _ = PipelineParameters(parameters_expected=[], rule=Equals())
+        _ = PipelineParametersAsExpected(parameters_expected=[], rule=Equals())
 
 
 @pytest.mark.parametrize(
@@ -193,7 +194,7 @@ def test_has_parameters_raise() -> None:
     ],
 )
 def test_step_kms_key_id(kms_key_id_expected, success, sagemaker_pipeline) -> None:
-    has_kms_key_id_in_processing_output = StepKmsKeyId(
+    has_kms_key_id_in_processing_output = StepKmsKeyIdAsExpected(
         kms_key_id_expected=kms_key_id_expected,
         rule=Equals(),
     )
@@ -209,7 +210,7 @@ def test_step_kms_key_id(kms_key_id_expected, success, sagemaker_pipeline) -> No
     ],
 )
 def test_step_kms_key_id_filter(kms_key_id_expected, success, sagemaker_pipeline) -> None:
-    has_kms_key_id_in_processing_output = StepKmsKeyId(
+    has_kms_key_id_in_processing_output = StepKmsKeyIdAsExpected(
         kms_key_id_expected=kms_key_id_expected,
         step_name="sm_processing_step_sklearn",
         rule=Equals(),
@@ -226,7 +227,7 @@ def test_step_kms_key_id_filter(kms_key_id_expected, success, sagemaker_pipeline
     ],
 )
 def test_step_kms_key_id_no_filter(kms_key_id_expected, success, sagemaker_pipeline) -> None:
-    has_kms_key_id_in_processing_output = StepKmsKeyId(
+    has_kms_key_id_in_processing_output = StepKmsKeyIdAsExpected(
         kms_key_id_expected=kms_key_id_expected,
         rule=Equals(),
     )
@@ -252,7 +253,7 @@ def test_step_network_config(
         subnets=["subnet-12345"],
         encrypt_inter_container_traffic=True,
     )
-    step_network_config = StepNetworkConfig(
+    step_network_config = StepNetworkConfigAsExpected(
         network_config_expected=network_config_expected,
         rule=Equals(),
     )
@@ -269,7 +270,7 @@ def test_step_network_config_none_observed(
         subnets=["subnet-12345"],
         encrypt_inter_container_traffic=True,
     )
-    step_network_config = StepNetworkConfig(
+    step_network_config = StepNetworkConfigAsExpected(
         network_config_expected=network_config_expected,
         rule=Equals(),
     )
@@ -318,7 +319,7 @@ def test_step_network_config_none_observed(
 def test_step_network_config_filter(
     network_config_expected, success, step_name, sagemaker_pipeline
 ) -> None:
-    step_network_config = StepNetworkConfig(
+    step_network_config = StepNetworkConfigAsExpected(
         network_config_expected=network_config_expected,
         rule=Equals(),
         step_name=step_name,
@@ -365,7 +366,7 @@ def test_role_exists_negative(iam_client, sagemaker_pipeline) -> None:
         ["nonexistent-role-name", False],
     ],
 )
-def test_step_role_filter(role_name_expected, success, sagemaker_pipeline) -> None:
+def test_step_role_name_as_expected_filter(role_name_expected, success, sagemaker_pipeline) -> None:
     step_role_validation = StepRoleNameAsExpected(
         role_name_expected=role_name_expected,
         step_name="sm_processing_step_sklearn",
@@ -382,10 +383,109 @@ def test_step_role_filter(role_name_expected, success, sagemaker_pipeline) -> No
         ["nonexistent-role-name", False],
     ],
 )
-def test_step_role_no_filter(role_name_expected, success, sagemaker_pipeline) -> None:
+def test_step_role_name_as_expected_no_filter(
+    role_name_expected, success, sagemaker_pipeline
+) -> None:
     step_role_validation = StepRoleNameAsExpected(
         role_name_expected=role_name_expected,
         rule=Equals(),
+    )
+    result = step_role_validation.run(sagemaker_pipeline)
+    assert result.success == success
+
+
+@pytest.mark.parametrize(
+    "rule,tags_expected,step_name,success",
+    [
+        [Equals, [{"Key": "some-key", "Value": "some-value"}], "sm_processing_step_spark", True],
+        [Contains, [{"Key": "some-key", "Value": "some-value"}], "sm_processing_step_spark", True],
+        [
+            Contains,
+            [{"Key": "some-key", "Value": "some-value"}],
+            "sm_processing_step_sklearn",
+            True,
+        ],
+        [
+            Equals,
+            [
+                {
+                    "Key": "some-key",
+                    "Value": ParameterString(name="parameter-1", default_value="some-value-1"),
+                }
+            ],
+            "sm_training_step_sklearn",
+            False,
+        ],
+        [
+            Equals,
+            [
+                {"Key": "some-key", "Value": "some-value"},
+                {
+                    "Key": "some-key",
+                    "Value": ParameterString(name="parameter-1", default_value="some-value-1"),
+                },
+            ],
+            "sm_training_step_sklearn",
+            True,
+        ],
+        [
+            Equals,
+            [
+                {"Key": "some-key", "Value": "some-value"},
+                {"Key": "some-non-existent-key", "Value": "some-non-existent-value"},
+            ],
+            "sm_processing_step_spark",
+            False,
+        ],
+        [
+            Equals,
+            [{"Key": "some-key", "Value": "some-non-existent-value"}],
+            "sm_processing_step_spark",
+            False,
+        ],
+        [
+            Equals,
+            [{"Key": "some-non-existent-key", "Value": "some-value"}],
+            "sm_processing_step_spark",
+            False,
+        ],
+        [Equals, [], "sm_processing_step_spark", False],
+    ],
+)
+def test_step_tags_as_expected_filter(
+    rule, tags_expected, step_name, success, sagemaker_pipeline
+) -> None:
+    step_role_validation = StepTagsAsExpected(
+        tags_expected=tags_expected,
+        step_name=step_name,
+        rule=rule(),
+    )
+    result = step_role_validation.run(sagemaker_pipeline)
+    assert result.success == success
+
+
+@pytest.mark.parametrize(
+    "rule,tags_expected,success",
+    [
+        [Equals, [{"Key": "some-key", "Value": "some-value"}], False],
+        [Equals, [{"Key": "some-non-existent-key", "Value": "some-non-existent-value"}], False],
+        [
+            Contains,
+            [
+                {
+                    "Key": "some-key",
+                    "Value": ParameterString(name="parameter-1", default_value="some-value-1"),
+                }
+            ],
+            False,
+        ],
+        [Contains, [{"Key": "some-key", "Value": "some-value"}], True],
+    ],
+)
+def test_step_tags_as_expected_no_filter(rule, tags_expected, success, sagemaker_pipeline) -> None:
+    step_role_validation = StepTagsAsExpected(
+        tags_expected=tags_expected,
+        rule=rule(),
     )
     result = step_role_validation.run(sagemaker_pipeline)
     assert result.success == success

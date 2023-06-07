@@ -29,27 +29,28 @@ It is responsible for validating a single property of the `Pipeline` object.
 We differentiate between `Validations` that check the `Pipeline` object itself (class names beginning with "Pipeline") and `Validations` that check the `Pipeline` object's `Step` objects (class name starting with "Step").
 Depending on the specific `Validation`, a different set of `StepTypEnums` may be supported.
 
-For example, the `StepImagesExistOnEcr` supports `Processing` and `Training` steps. It's a validation checks that all ImageURI that
+For example, the `StepImagesExist` supports `Processing` and `Training` steps. It's a validation checks that all ImageURI that
 Steps of the named types of the `Pipeline` object reference indeed exist on the target ECR.
 
 The following `Validations` are currently implemented:
-  - `PipelineParameters`
-  - `StepImagesExistOnEcr`
-  - `StepKmsKeyId`
-  - `StepNetworkConfig`
+  - `PipelineParametersAsExpected`
+  - `StepImagesExist`
+  - `StepKmsKeyIdAsExpected`
+  - `StepNetworkConfigAsExpected`
   - `StepLambdaFunctionExists`
   - `StepRoleNameExists`
   - `StepRoleNameAsExpected`
+  - `StepTagsAsExpected`
 
 In most cases, a `Validation` subclass requires passing a `Rule` object to its constructor.
 
 ### 📜 Rules
 A `Rule` is a class that inherits from the `Rule` base class.
 It is responsible for defining the rule that a `Validation` checks for.
-For example, passing the list of expected KMSKeyIDs and the `Rule` `Equals` to `StepKmsKeyId` will check that
+For example, passing the list of expected KMSKeyIDs and the `Rule` `Equals` to `StepKmsKeyIdAsExpected` will check that
 all `Step` objects of the `Pipeline` object have a `KmsKeyId` property that matches the passed KMSKeyIDs.
 
-Note that not all `Validations` require a `Rule` object, e.g. `StepImagesExistOnEcr`.
+Note that not all `Validations` require a `Rule` object, e.g. `StepImagesExist`.
 
 The following `Rules` are currently implemented:
   - `Equals`
@@ -63,29 +64,32 @@ It contains the results of the `Validations` that were run against the `Pipeline
 to allow for further analysis.
 
 ## Usage
+
 ```python
 from sagemaker.processing import NetworkConfig
 from sagemaker.workflow.parameters import ParameterString
 from sagemaker_rightline.model import Configuration
 from sagemaker_rightline.rules import Contains, Equals
 from sagemaker_rightline.validations import (
-    PipelineParameters,
-    StepImagesExistOnEcr,
-    StepKmsKeyId,
-    StepNetworkConfig,
+    PipelineParametersAsExpected,
+    StepImagesExist,
+    StepKmsKeyIdAsExpected,
+    StepNetworkConfigAsExpected,
     StepLambdaFunctionExists,
     StepRoleNameExists,
     StepRoleNameAsExpected,
+    StepTagsAsExpected,
 )
 
 # Import a dummy pipeline
 from tests.fixtures.pipeline import get_sagemaker_pipeline
+
 sm_pipeline = get_sagemaker_pipeline()
 
 # Define Validations
 validations = [
-    StepImagesExistOnEcr(),
-    PipelineParameters(
+    StepImagesExist(),
+    PipelineParametersAsExpected(
         parameters_expected=[
             ParameterString(
                 name="parameter-1",
@@ -94,12 +98,12 @@ validations = [
         ],
         rule=Contains(),
     ),
-    StepKmsKeyId(
+    StepKmsKeyIdAsExpected(
         kms_key_id_expected="some/kms-key-alias",
         step_name="sm_training_step_sklearn",  # optional: if not set, will check all steps
         rule=Equals(),
     ),
-    StepNetworkConfig(
+    StepNetworkConfigAsExpected(
         network_config_expected=NetworkConfig(
             enable_network_isolation=False,
             security_group_ids=["sg-1234567890"],
@@ -111,6 +115,13 @@ validations = [
     StepRoleNameExists(),
     StepRoleNameAsExpected(
         role_name_expected="some-role-name",
+        step_name="sm_training_step_sklearn",  # optional: if not set, will check all steps
+        rule=Equals(),
+    ),
+    StepTagsAsExpected(
+        tags_expected=[{
+            "some-key": "some-value",
+        }],
         step_name="sm_training_step_sklearn",  # optional: if not set, will check all steps
         rule=Equals(),
     ),

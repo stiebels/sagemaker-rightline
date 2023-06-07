@@ -77,7 +77,7 @@ class Contains(Rule):
         :return: validation result
         :rtype: ValidationResult
         """
-        is_contained = set(expected).issubset(set(observed))
+        is_contained = all(item in observed for item in expected)
         is_contained = is_contained if not self.negative else not is_contained
         return ValidationResult(
             validation_name=validation_name,
