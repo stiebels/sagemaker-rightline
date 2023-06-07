@@ -8,7 +8,7 @@ from sagemaker_rightline.rules import Contains, Equals
 from sagemaker_rightline.validations import (
     ContainerImage,
     PipelineParametersAsExpected,
-    StepImagesExistOnEcr,
+    StepImagesExist,
     StepKmsKeyIdAsExpected,
     StepLambdaFunctionExists,
     StepNetworkConfigAsExpected,
@@ -38,7 +38,7 @@ if __name__ == "__main__":
         ecr_client = boto3.client("ecr")
         with create_image(ecr_client, container_images):
             validations = [
-                StepImagesExistOnEcr(),
+                StepImagesExist(),
                 PipelineParametersAsExpected(
                     parameters_expected=[
                         ParameterString(

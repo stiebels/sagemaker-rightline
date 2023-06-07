@@ -8,7 +8,7 @@ from sagemaker_rightline.rules import Contains, Equals
 from sagemaker_rightline.validations import (
     ContainerImage,
     PipelineParametersAsExpected,
-    StepImagesExistOnEcr,
+    StepImagesExist,
     StepKmsKeyIdAsExpected,
     StepLambdaFunctionExists,
     StepNetworkConfigAsExpected,
@@ -80,7 +80,7 @@ def test_step_image_exists_run_positive(ecr_client, sagemaker_pipeline) -> None:
         ContainerImage(uri=IMAGE_2_URI),
     ]
     with create_image(ecr_client, container_images):
-        image_exists = StepImagesExistOnEcr()
+        image_exists = StepImagesExist()
         result = image_exists.run(sagemaker_pipeline)
 
     assert result.success
@@ -90,7 +90,7 @@ def test_step_image_exists_run_positive(ecr_client, sagemaker_pipeline) -> None:
 
 @mock_ecr
 def test_step_image_exists_run_negative(sagemaker_pipeline) -> None:
-    image_exists = StepImagesExistOnEcr()
+    image_exists = StepImagesExist()
     result = image_exists.run(sagemaker_pipeline)
 
     assert not result.success
@@ -99,7 +99,7 @@ def test_step_image_exists_run_negative(sagemaker_pipeline) -> None:
 
 def test_step_image_exists_wrong_client() -> None:
     with pytest.raises(ValueError):
-        _ = StepImagesExistOnEcr(boto3_client="not-a-boto3-client")
+        _ = StepImagesExist(boto3_client="not-a-boto3-client")
 
 
 def test_step_lambda_function_exists_wrong_client() -> None:

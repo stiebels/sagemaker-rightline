@@ -11,7 +11,7 @@ from sagemaker_rightline.model import (
 from sagemaker_rightline.rules import Equals, Rule
 from sagemaker_rightline.validations import (
     ContainerImage,
-    StepImagesExistOnEcr,
+    StepImagesExist,
     StepKmsKeyIdAsExpected,
     ValidationResult,
 )
@@ -31,8 +31,8 @@ def sagemaker_pipeline():
         [["not_validation"], True],
         ["not_list", True],
         [[], True],
-        [[StepImagesExistOnEcr()], False],
-        [[StepImagesExistOnEcr(), StepImagesExistOnEcr()], False],
+        [[StepImagesExist()], False],
+        [[StepImagesExist(), StepImagesExist()], False],
     ],
 )
 def test_configuration_validate_input_validations(validations, error: bool) -> None:
@@ -85,8 +85,8 @@ def test_configuration_make_report(results) -> None:
 @pytest.mark.parametrize(
     "expected_report_length,validations, return_df",
     [
-        [1, [StepImagesExistOnEcr()], False],
-        [2, [StepImagesExistOnEcr(), StepImagesExistOnEcr()], True],
+        [1, [StepImagesExist()], False],
+        [2, [StepImagesExist(), StepImagesExist()], True],
     ],
 )
 def test_configuration_run(
@@ -131,8 +131,8 @@ def test_configuration_handle_empty_results(sagemaker_pipeline) -> None:
 @pytest.mark.parametrize(
     "raises_error,validations",
     [
-        [False, [StepImagesExistOnEcr()]],
-        [True, [StepImagesExistOnEcr(), StepImagesExistOnEcr()]],
+        [False, [StepImagesExist()]],
+        [True, [StepImagesExist(), StepImagesExist()]],
     ],
 )
 def test_configuration_run_fail_fast(sagemaker_pipeline, raises_error, validations) -> None:
@@ -148,7 +148,7 @@ def test_configuration_run_fail_fast(sagemaker_pipeline, raises_error, validatio
 
 def test_report_to_df() -> None:
     """Test to_df method of Report class."""
-    validation_name = "StepImagesExistOnEcr"
+    validation_name = "StepImagesExist"
     report = Report(
         results=[
             ValidationResult(
@@ -193,7 +193,7 @@ def test_validation_get_attribute_no_filter(sagemaker_pipeline) -> None:
         kms_key_alias_expected,
     ]
 
-    validation = StepImagesExistOnEcr()
+    validation = StepImagesExist()
     assert validation.get_attribute(sagemaker_pipeline) == [IMAGE_1_URI, IMAGE_2_URI, IMAGE_1_URI]
 
 

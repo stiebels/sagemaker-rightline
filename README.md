@@ -29,12 +29,12 @@ It is responsible for validating a single property of the `Pipeline` object.
 We differentiate between `Validations` that check the `Pipeline` object itself (class names beginning with "Pipeline") and `Validations` that check the `Pipeline` object's `Step` objects (class name starting with "Step").
 Depending on the specific `Validation`, a different set of `StepTypEnums` may be supported.
 
-For example, the `StepImagesExistOnEcr` supports `Processing` and `Training` steps. It's a validation checks that all ImageURI that
+For example, the `StepImagesExist` supports `Processing` and `Training` steps. It's a validation checks that all ImageURI that
 Steps of the named types of the `Pipeline` object reference indeed exist on the target ECR.
 
 The following `Validations` are currently implemented:
   - `PipelineParametersAsExpected`
-  - `StepImagesExistOnEcr`
+  - `StepImagesExist`
   - `StepKmsKeyIdAsExpected`
   - `StepNetworkConfigAsExpected`
   - `StepLambdaFunctionExists`
@@ -50,7 +50,7 @@ It is responsible for defining the rule that a `Validation` checks for.
 For example, passing the list of expected KMSKeyIDs and the `Rule` `Equals` to `StepKmsKeyIdAsExpected` will check that
 all `Step` objects of the `Pipeline` object have a `KmsKeyId` property that matches the passed KMSKeyIDs.
 
-Note that not all `Validations` require a `Rule` object, e.g. `StepImagesExistOnEcr`.
+Note that not all `Validations` require a `Rule` object, e.g. `StepImagesExist`.
 
 The following `Rules` are currently implemented:
   - `Equals`
@@ -72,7 +72,7 @@ from sagemaker_rightline.model import Configuration
 from sagemaker_rightline.rules import Contains, Equals
 from sagemaker_rightline.validations import (
     PipelineParametersAsExpected,
-    StepImagesExistOnEcr,
+    StepImagesExist,
     StepKmsKeyIdAsExpected,
     StepNetworkConfigAsExpected,
     StepLambdaFunctionExists,
@@ -88,7 +88,7 @@ sm_pipeline = get_sagemaker_pipeline()
 
 # Define Validations
 validations = [
-    StepImagesExistOnEcr(),
+    StepImagesExist(),
     PipelineParametersAsExpected(
         parameters_expected=[
             ParameterString(

@@ -99,7 +99,7 @@ class ContainerImage:
         self.tag = self.uri.split(":")[1]
 
 
-class StepImagesExistOnEcr(Validation):
+class StepImagesExist(Validation):
     """Check if container images exist in ECR.
 
     Supported only for ProcessingStep and TrainingStep.
@@ -121,7 +121,7 @@ class StepImagesExistOnEcr(Validation):
         """
         self.step_filter: str = f"name=={step_name}" if step_name else ""
         super().__init__(
-            name="StepImagesExistOnEcr",
+            name="StepImagesExist",
             paths=[
                 f".steps[{self.step_filter} && step_type/value==Processing].processor.image_uri",
                 f".steps[{self.step_filter} && step_type/value==Training].estimator.image_uri",
