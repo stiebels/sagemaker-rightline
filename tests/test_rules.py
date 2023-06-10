@@ -26,6 +26,9 @@ from sagemaker_rightline.rules import Contains, Equals
             True,
         ],
         [[ParameterString(name="test3")], [ParameterString(name="test1")], False, False],
+        [{"foo": "bar"}, {"foo": "bar"}, False, True],
+        [{"bar": "foo", "foo": "bar"}, {"foo": "bar", "bar": "foo"}, False, True],
+        [{"bar": "bar"}, {"foo": "bar"}, False, False],
     ],
 )
 def test_equals(observed: List, expected: List, negative: bool, success: bool) -> None:
