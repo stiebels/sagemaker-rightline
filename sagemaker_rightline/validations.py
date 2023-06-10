@@ -5,7 +5,8 @@ from typing import Dict, List, Optional, Union
 import boto3
 from botocore.exceptions import ClientError
 from sagemaker.estimator import Estimator
-from sagemaker.processing import NetworkConfig
+from sagemaker.inputs import FileSystemInput, TrainingInput
+from sagemaker.processing import NetworkConfig, ProcessingInput
 from sagemaker.workflow.entities import PipelineVariable
 from sagemaker.workflow.parameters import Parameter
 from sagemaker.workflow.pipeline import Pipeline
@@ -38,7 +39,7 @@ class PipelineParametersAsExpected(Validation):
         :return: Dict containing ValidationResult
         :rtype: ValidationResult
         """
-        parameters_observed = self.get_attribute(sagemaker_pipeline)
+        parameters_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
         if self.ignore_default_value:
             for ix, parameter in enumerate(parameters_observed):
                 parameters_observed[ix].default_value = None
@@ -80,7 +81,7 @@ class StepKmsKeyIdAsExpected(Validation):
         :return: validation result
         :rtype: ValidationResult
         """
-        kms_keys_observed = self.get_attribute(sagemaker_pipeline)
+        kms_keys_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
         result = self.rule.run(kms_keys_observed, [self.kms_key_id_expected], self.name)
         return result
 
@@ -148,7 +149,7 @@ class StepImagesExist(Validation):
         """
         paginator = self.client.get_paginator("describe_images")
 
-        uris = self.get_attribute(sagemaker_pipeline)
+        uris = Validation.get_attribute(sagemaker_pipeline, self.paths)
         # return uris
         not_exist = []
         exist = []
@@ -252,7 +253,7 @@ class StepNetworkConfigAsExpected(Validation):
         :return: validation result
         :rtype: ValidationResult
         """
-        network_configs_observed = self.get_attribute(sagemaker_pipeline)
+        network_configs_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
 
         # Compatibility with TrainingStep, which does not have a NetworkConfig object
         # as attribute, but takes the attributes of NetworkConfig as individual arguments.
@@ -327,7 +328,7 @@ class StepLambdaFunctionExists(Validation):
         :return: validation result
         :rtype: ValidationResult
         """
-        lambda_func_observed = self.get_attribute(sagemaker_pipeline)
+        lambda_func_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
         exist = []
         not_exist = []
         for func in lambda_func_observed:
@@ -404,7 +405,7 @@ class StepRoleNameAsExpected(Validation):
         :return: validation result
         :rtype: ValidationResult
         """
-        role_arns_observed = self.get_attribute(sagemaker_pipeline)
+        role_arns_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
         role_name_observed = [role_arn.split("/")[-1] for role_arn in role_arns_observed]
         result = self.rule.run(role_name_observed, [self.role_name_expected], self.name)
         return result
@@ -459,7 +460,7 @@ class StepRoleNameExists(Validation):
         :return: validation result
         :rtype: ValidationResult
         """
-        role_arns_observed = self.get_attribute(sagemaker_pipeline)
+        role_arns_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
         role_name_observed = [role_arn.split("/")[-1] for role_arn in role_arns_observed]
 
         exist = []
@@ -538,6 +539,117 @@ class StepTagsAsExpected(Validation):
         :return: validation result
         :rtype: ValidationResult
         """
-        tags_observed = self.get_attribute(sagemaker_pipeline)
+        tags_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
         result = self.rule.run(tags_observed[0], self.tags_expected, self.name)
+        return result
+
+
+class StepInputsAsExpected(Validation):
+    """Validate Inputs of Pipeline Step.
+
+    Supported only for ProcessingStep and TrainingStep. This validation
+    is useful when you want to ensure that the Inputs of a Pipeline Step
+    are as expected.
+    """
+
+    def __init__(
+        self,
+        inputs_expected: List[
+            Union[Dict[str, Union[str, TrainingInput, FileSystemInput]], ProcessingInput]
+        ],
+        rule: Rule,
+        step_type: Optional[Union["Training", "Processing"]] = None,  # noqa F821
+        step_name: Optional[str] = None,
+    ) -> None:
+        """Initialize StepTagsAsExpected validation.
+
+        :param inputs_expected: Expected Inputs
+        :type inputs_expected: List[Dict[str, Union[str, TrainingInput, ProcessingInput,
+        FileSystemInput]]]
+        :param rule: Rule to use for validation
+        :type rule: Rule
+        :param step_type: Type of Step to validate
+        :type step_type: Union["Training", "Processing"]
+        :param step_name: Name of Step to validate, defaults to None
+        :type step_name: Optional[str], optional
+        :return: None
+        :rtype: None
+        """
+        if step_type and step_name:
+            raise ValueError("step_type and step_name cannot be specified together.")
+        if not step_type and not step_name:
+            raise ValueError("Either step_type or step_name must be specified.")
+        if step_type not in ("Training", "Processing") and not step_name:
+            raise ValueError(f"step_type must be 'Training' or 'Processing', not {step_type}.")
+
+        self.step_filter: str = f"name=={step_name}" if step_name else ""
+        self.step_type_filter: str = f"step_type/value=={step_type}" if step_type else ""
+
+        super().__init__(
+            name="StepInputsAsExpected",
+            paths=[
+                f".steps[{self.step_filter} && {self.step_type_filter}].inputs",
+            ],
+            rule=rule,
+        )
+        self.inputs_expected: List[
+            Dict[str, Union[str, TrainingInput, ProcessingInput, FileSystemInput]]
+        ] = inputs_expected
+
+    @staticmethod
+    def format_training_inputs(
+        inputs: List[Dict[str, Union[str, TrainingInput, FileSystemInput]]]
+    ) -> List[Dict[str, Union[dict, str]]]:
+        """Format Training Inputs.
+
+        :param inputs: Training Inputs
+        :type inputs: List[Dict[str, Union[str, TrainingInput, FileSystemInput]]]
+        :return: Formatted Training Inputs
+        :rtype: List[Dict[str, Union[dict, str]]]
+        """
+        formatted_inputs = []
+        for item in inputs:
+            for key, value in item.items():
+                formatted_inputs.append(
+                    {
+                        key: value.__dict__
+                        if isinstance(value, TrainingInput) or isinstance(value, FileSystemInput)
+                        else value
+                    }
+                )
+        return formatted_inputs
+
+    def run(
+        self,
+        sagemaker_pipeline: Pipeline,
+    ) -> ValidationResult:
+        """Runs validation of Parameters on Pipeline.
+
+        :param sagemaker_pipeline: SageMaker Pipeline
+        :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
+        :return: validation result
+        :rtype: ValidationResult
+        """
+        if self.step_filter:
+            step_type = Validation.get_attribute(
+                sagemaker_pipeline, [f".steps[{self.step_filter}].step_type.value"]
+            )[0]
+            self.step_type_filter = f"step_type/value=={step_type}"
+
+        inputs_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
+        inputs_observed_formatted = []
+        inputs_expected_formatted = []
+        if self.step_type_filter == "step_type/value==Processing":
+            # ProcessingStep has a list of ProcessingInput
+            inputs_observed_formatted += [x.__dict__ for y in inputs_observed for x in y]
+            inputs_expected_formatted += [x.__dict__ for x in self.inputs_expected]
+        elif self.step_type_filter == "step_type/value==Training":
+            # TrainingStep has a dict with values potentially being TrainingInput or FileSystemInput
+            inputs_observed_formatted += StepInputsAsExpected.format_training_inputs(
+                inputs_observed
+            )
+            inputs_expected_formatted += StepInputsAsExpected.format_training_inputs(
+                self.inputs_expected
+            )
+        result = self.rule.run(inputs_observed_formatted, inputs_expected_formatted, self.name)
         return result

@@ -66,7 +66,7 @@ to allow for further analysis.
 ## Usage
 
 ```python
-from sagemaker.processing import NetworkConfig
+from sagemaker.processing import NetworkConfig, ProcessingInput
 from sagemaker.workflow.parameters import ParameterString
 from sagemaker_rightline.model import Configuration
 from sagemaker_rightline.rules import Contains, Equals
@@ -79,10 +79,11 @@ from sagemaker_rightline.validations import (
     StepRoleNameExists,
     StepRoleNameAsExpected,
     StepTagsAsExpected,
+    StepInputsAsExpected,
 )
 
 # Import a dummy pipeline
-from tests.fixtures.pipeline import get_sagemaker_pipeline
+from tests.fixtures.pipeline import get_sagemaker_pipeline, DUMMY_BUCKET
 
 sm_pipeline = get_sagemaker_pipeline()
 
@@ -124,6 +125,17 @@ validations = [
         }],
         step_name="sm_training_step_sklearn",  # optional: if not set, will check all steps
         rule=Equals(),
+    ),
+    StepInputsAsExpected(
+        inputs_expected=[
+            ProcessingInput(
+                source=f"s3://{DUMMY_BUCKET}/input-1",
+                destination="/opt/ml/processing/input",
+                input_name="input-2",
+            )
+        ],
+        step_type="Processing",  # either step_type or step_name must be set to filter
+        rule=Contains(),
     ),
 ]
 

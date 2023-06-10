@@ -1,6 +1,6 @@
 import boto3
 from moto import mock_ecr
-from sagemaker.processing import NetworkConfig
+from sagemaker.processing import NetworkConfig, ProcessingInput
 from sagemaker.workflow.parameters import ParameterString
 
 from sagemaker_rightline.model import Configuration
@@ -9,6 +9,7 @@ from sagemaker_rightline.validations import (
     ContainerImage,
     PipelineParametersAsExpected,
     StepImagesExist,
+    StepInputsAsExpected,
     StepKmsKeyIdAsExpected,
     StepLambdaFunctionExists,
     StepNetworkConfigAsExpected,
@@ -17,7 +18,7 @@ from sagemaker_rightline.validations import (
     StepTagsAsExpected,
 )
 from tests.fixtures.image_details import IMAGE_1_URI, IMAGE_2_URI
-from tests.fixtures.pipeline import get_sagemaker_pipeline
+from tests.fixtures.pipeline import DUMMY_BUCKET, get_sagemaker_pipeline
 from tests.utils import create_image
 
 if __name__ == "__main__":
@@ -76,6 +77,17 @@ if __name__ == "__main__":
                     ],
                     step_name="sm_training_step_sklearn",  # if not set, will check all steps
                     rule=Equals(),
+                ),
+                StepInputsAsExpected(
+                    inputs_expected=[
+                        ProcessingInput(
+                            source=f"s3://{DUMMY_BUCKET}/input-1",
+                            destination="/opt/ml/processing/input",
+                            input_name="input-2",
+                        )
+                    ],
+                    step_type="Processing",  # either step_type or step_name must be set to filter
+                    rule=Contains(),
                 ),
             ]
             cm = Configuration(

@@ -177,7 +177,9 @@ def test_validation_get_attribute_filter(sagemaker_pipeline) -> None:
         rule=Equals(),
         kms_key_id_expected=kms_key_alias_expected,
     )
-    assert validation.get_attribute(sagemaker_pipeline) == [kms_key_alias_expected]
+    assert Validation.get_attribute(sagemaker_pipeline, validation.paths) == [
+        kms_key_alias_expected
+    ]
 
 
 def test_validation_get_attribute_no_filter(sagemaker_pipeline) -> None:
@@ -187,14 +189,18 @@ def test_validation_get_attribute_no_filter(sagemaker_pipeline) -> None:
         rule=Equals(),
         kms_key_id_expected=kms_key_alias_expected,
     )
-    assert validation.get_attribute(sagemaker_pipeline) == [
+    assert Validation.get_attribute(sagemaker_pipeline, validation.paths) == [
         kms_key_alias_expected,
         kms_key_alias_expected,
         kms_key_alias_expected,
     ]
 
     validation = StepImagesExist()
-    assert validation.get_attribute(sagemaker_pipeline) == [IMAGE_1_URI, IMAGE_2_URI, IMAGE_1_URI]
+    assert Validation.get_attribute(sagemaker_pipeline, validation.paths) == [
+        IMAGE_1_URI,
+        IMAGE_2_URI,
+        IMAGE_1_URI,
+    ]
 
 
 def test_validation_failed_error():

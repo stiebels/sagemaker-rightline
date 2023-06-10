@@ -1,6 +1,7 @@
 import pytest
 from moto import mock_ecr, mock_iam, mock_lambda
-from sagemaker.processing import NetworkConfig
+from sagemaker.inputs import FileSystemInput, TrainingInput
+from sagemaker.processing import NetworkConfig, ProcessingInput
 from sagemaker.workflow.parameters import ParameterString
 
 from sagemaker_rightline.model import Validation, ValidationResult
@@ -9,6 +10,7 @@ from sagemaker_rightline.validations import (
     ContainerImage,
     PipelineParametersAsExpected,
     StepImagesExist,
+    StepInputsAsExpected,
     StepKmsKeyIdAsExpected,
     StepLambdaFunctionExists,
     StepNetworkConfigAsExpected,
@@ -28,7 +30,7 @@ from tests.fixtures.image_details import (
     IMAGE_1_URI,
     IMAGE_2_URI,
 )
-from tests.fixtures.pipeline import get_sagemaker_pipeline
+from tests.fixtures.pipeline import DUMMY_BUCKET, get_sagemaker_pipeline
 from tests.utils import (
     create_iam_role,
     create_image,
@@ -258,7 +260,7 @@ def test_step_network_config(
         rule=Equals(),
     )
     result = step_network_config.run(sagemaker_pipeline)
-    assert not result.success
+    assert result.success
 
 
 def test_step_network_config_none_observed(
@@ -489,3 +491,207 @@ def test_step_tags_as_expected_no_filter(rule, tags_expected, success, sagemaker
     )
     result = step_role_validation.run(sagemaker_pipeline)
     assert result.success == success
+
+
+@pytest.mark.parametrize(
+    "rule,inputs_expected,step_type,success",
+    [
+        [
+            Contains,
+            [
+                ProcessingInput(
+                    source=f"s3://{DUMMY_BUCKET}/input-2",
+                    destination="/opt/ml/processing/input",
+                    input_name="input-2",
+                )
+            ],
+            "Processing",
+            True,
+        ],
+        [
+            Contains,
+            [
+                ProcessingInput(
+                    source=f"s3://{DUMMY_BUCKET}/input-2",
+                    destination="/opt/ml/processing/input",
+                    input_name="input-3",
+                )
+            ],
+            "Processing",
+            False,
+        ],
+        [
+            Contains,
+            [
+                {
+                    "train": TrainingInput(
+                        s3_data=f"s3://{DUMMY_BUCKET}/some-prefix/validation",
+                        content_type="text/csv",
+                    )
+                }
+            ],
+            "Training",
+            True,
+        ],
+        [
+            Contains,
+            [
+                {
+                    "validation": FileSystemInput(
+                        file_system_id="fs-1234",
+                        file_system_type="EFS",
+                        directory_path="/some/path",
+                        file_system_access_mode="ro",
+                    )
+                }
+            ],
+            "Training",
+            True,
+        ],
+    ],
+)
+def test_step_inputs_as_expected_no_filter(
+    rule, inputs_expected, step_type, success, sagemaker_pipeline
+) -> None:
+    step_inputs_validation = StepInputsAsExpected(
+        inputs_expected=inputs_expected,
+        step_type=step_type,
+        rule=rule(),
+    )
+    result = step_inputs_validation.run(sagemaker_pipeline)
+    assert result.success == success
+
+
+@pytest.mark.parametrize(
+    "rule,inputs_expected,step_name,success",
+    [
+        [
+            Equals,
+            [
+                ProcessingInput(
+                    source=f"s3://{DUMMY_BUCKET}/input-1",
+                    destination="/opt/ml/processing/input",
+                    input_name="input-1",
+                ),
+                ProcessingInput(
+                    source=f"s3://{DUMMY_BUCKET}/input-2",
+                    destination="/opt/ml/processing/input",
+                    input_name="input-2",
+                ),
+            ],
+            "sm_processing_step_sklearn",
+            True,
+        ],
+        [
+            Equals,
+            [
+                ProcessingInput(
+                    source=f"s3://{DUMMY_BUCKET}/input-2",
+                    destination="/opt/ml/processing/input",
+                    input_name="input-2",
+                ),
+                ProcessingInput(
+                    source=f"s3://{DUMMY_BUCKET}/input-1",
+                    destination="/opt/ml/processing/input",
+                    input_name="input-1",
+                ),
+            ],
+            "sm_processing_step_sklearn",
+            True,
+        ],
+        [
+            Equals,
+            [
+                {
+                    "train": TrainingInput(
+                        s3_data=f"s3://{DUMMY_BUCKET}/some-prefix/validation",
+                        content_type="text/csv",
+                    ),
+                    "validation": FileSystemInput(
+                        file_system_id="fs-1234",
+                        file_system_type="EFS",
+                        directory_path="/some/path",
+                        file_system_access_mode="ro",
+                    ),
+                    "some-key": "some-value",
+                }
+            ],
+            "sm_training_step_sklearn",
+            True,
+        ],
+        [
+            Equals,
+            [
+                {
+                    "train": TrainingInput(
+                        s3_data=f"s3://{DUMMY_BUCKET}/some-prefix/validation",
+                        content_type="text/csv",
+                    ),
+                    "some-key": "some-value",
+                    "validation": FileSystemInput(
+                        file_system_id="fs-1234",
+                        file_system_type="EFS",
+                        directory_path="/some/path",
+                        file_system_access_mode="ro",
+                    ),
+                }
+            ],
+            "sm_training_step_sklearn",
+            True,
+        ],
+        [
+            Equals,
+            [
+                ProcessingInput(
+                    source=f"s3://{DUMMY_BUCKET}/does-not-match",
+                    destination="/opt/ml/processing/input",
+                    input_name="input-1",
+                ),
+                ProcessingInput(
+                    source=f"s3://{DUMMY_BUCKET}/input-1",
+                    destination="/opt/ml/processing/input",
+                    input_name="input-2",
+                ),
+            ],
+            "sm_processing_step_sklearn",
+            False,
+        ],
+    ],
+)
+def test_step_inputs_as_expected_filter(
+    rule, inputs_expected, step_name, success, sagemaker_pipeline
+) -> None:
+    step_inputs_validation = StepInputsAsExpected(
+        inputs_expected=inputs_expected,
+        step_name=step_name,
+        rule=rule(),
+    )
+    result = step_inputs_validation.run(sagemaker_pipeline)
+    assert result.success == success
+
+
+def test_step_inputs_as_expected_args_validation_step_type() -> None:
+    with pytest.raises(ValueError):
+        StepInputsAsExpected(
+            inputs_expected=[],
+            step_type="does-not-exist",
+            rule=Equals(),
+        )
+
+
+def test_step_inputs_as_expected_args_validation_exclusive() -> None:
+    with pytest.raises(ValueError):
+        StepInputsAsExpected(
+            inputs_expected=[],
+            step_type="does-not-exist",
+            step_name="does-not-exist",
+            rule=Equals(),
+        )
+
+
+def test_step_inputs_as_expected_args_validation_neither() -> None:
+    with pytest.raises(ValueError):
+        StepInputsAsExpected(
+            inputs_expected=[],
+            rule=Equals(),
+        )

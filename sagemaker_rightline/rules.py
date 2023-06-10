@@ -38,7 +38,15 @@ class Equals(Rule):
             is_equal = set(observed) == set(expected)
         except TypeError:
             # In case of dict
-            is_equal = observed == expected
+            if isinstance(observed, dict) and isinstance(expected, dict):
+                is_equal = observed == expected
+            # In case of nested list
+            elif isinstance(observed, list) and isinstance(expected, list):
+                is_equal = all(True if item in observed else False for item in expected) and all(
+                    True if item in expected else False for item in observed
+                )
+            else:
+                is_equal = observed == expected
 
         is_equal = is_equal if not self.negative else not is_equal
         return ValidationResult(

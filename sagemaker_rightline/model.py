@@ -103,20 +103,23 @@ class Validation(ABC):
                 filtered_steps.append(subject)
         return filtered_steps
 
+    @staticmethod
     def get_attribute(
-        self,
         sagemaker_pipeline: Pipeline,
+        paths: List[str],
     ) -> List:
         """Get attribute from pipeline.
 
         :param sagemaker_pipeline: sagemaker pipeline
         :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
+        :param paths: list of paths to the attributes to be validated
+        :type paths: List[str]
         :return: attribute
         :rtype: List
         """
         # TODO: refactor
         result = []
-        for path in self.paths:
+        for path in paths:
             attr_path = path.split(".")[1:]
             sm_pipeline_copy = copy(sagemaker_pipeline)
             for ix, attr in enumerate(attr_path):
@@ -125,7 +128,7 @@ class Validation(ABC):
                     raw_attr = attr.split("[")[0]
                     sm_pipeline_copy = getattr(sm_pipeline_copy, raw_attr)
                     if has_filter_dict:
-                        sm_pipeline_copy = self.get_filtered_attributes(
+                        sm_pipeline_copy = Validation.get_filtered_attributes(
                             sm_pipeline_copy, ".".join(attr_path[ix:])
                         )
                 else:
