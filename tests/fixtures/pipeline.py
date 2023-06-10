@@ -1,3 +1,4 @@
+from sagemaker.inputs import FileSystemInput, TrainingInput
 from sagemaker.processing import NetworkConfig, ScriptProcessor
 from sagemaker.sklearn.estimator import SKLearn
 from sagemaker.spark.processing import PySparkProcessor
@@ -17,6 +18,9 @@ from tests.fixtures.image_details import IMAGE_1_URI, IMAGE_2_URI
 
 def arn_formatter(_type: str, _id: str, account_id: str, region_name: str) -> str:
     return f"arn:aws:sagemaker:{region_name}:{account_id}:{_type}/{_id}"
+
+
+DUMMY_BUCKET = "dummy-bucket"
 
 
 def get_sagemaker_pipeline(
@@ -67,8 +71,6 @@ def get_sagemaker_pipeline(
         ],
     )
 
-    dummy_bucket = "dummy-bucket"
-
     sm_processing_step_sklearn = ProcessingStep(
         name="sm_processing_step_sklearn",
         code=script_path,
@@ -76,12 +78,12 @@ def get_sagemaker_pipeline(
         kms_key="some/kms-key-alias",
         inputs=[
             ProcessingInput(
-                source=f"s3://{dummy_bucket}/input-1",
+                source=f"s3://{DUMMY_BUCKET}/input-1",
                 destination="/opt/ml/processing/input",
                 input_name="input-1",
             ),
             ProcessingInput(
-                source=f"s3://{dummy_bucket}/input-2",
+                source=f"s3://{DUMMY_BUCKET}/input-2",
                 destination="/opt/ml/processing/input",
                 input_name="input-2",
             ),
@@ -90,12 +92,12 @@ def get_sagemaker_pipeline(
             ProcessingOutput(
                 output_name="output-1",
                 source="/opt/ml/processing/output/1",
-                destination=f"s3://{dummy_bucket}/output-1",
+                destination=f"s3://{DUMMY_BUCKET}/output-1",
             ),
             ProcessingOutput(
                 output_name="output-2",
                 source="/opt/ml/processing/output/2",
-                destination=f"s3://{dummy_bucket}/output-2",
+                destination=f"s3://{DUMMY_BUCKET}/output-2",
             ),
         ],
     )
@@ -107,12 +109,12 @@ def get_sagemaker_pipeline(
         kms_key="some/kms-key-alias",
         inputs=[
             ProcessingInput(
-                source=f"s3://{dummy_bucket}/output-1",
+                source=sm_processing_step_sklearn.outputs,
                 destination="/opt/ml/processing/input",
                 input_name="input-1",
             ),
             ProcessingInput(
-                source=f"s3://{dummy_bucket}/output-2",
+                source=f"s3://{DUMMY_BUCKET}/input-2",
                 destination="/opt/ml/processing/input",
                 input_name="input-2",
             ),
@@ -121,12 +123,12 @@ def get_sagemaker_pipeline(
             ProcessingOutput(
                 output_name="output-1",
                 source="/opt/ml/processing/output/1",
-                destination=f"s3://{dummy_bucket}/output-3",
+                destination=f"s3://{DUMMY_BUCKET}/output-3",
             ),
             ProcessingOutput(
                 output_name="output-2",
                 source="/opt/ml/processing/output/2",
-                destination=f"s3://{dummy_bucket}/output-4",
+                destination=f"s3://{DUMMY_BUCKET}/output-4",
             ),
         ],
         depends_on=[sm_processing_step_sklearn.name],
@@ -135,11 +137,20 @@ def get_sagemaker_pipeline(
     sm_training_step_sklearn = TrainingStep(
         name="sm_training_step_sklearn",
         estimator=sm_trainer_sklearn,
-        inputs={
-            "train": f"s3://{dummy_bucket}/output-3",
-            "test": f"s3://{dummy_bucket}/output-4",
-        },
         depends_on=[sm_processing_step_spark.name],
+        inputs={
+            "train": TrainingInput(
+                s3_data=f"s3://{DUMMY_BUCKET}/some-prefix/validation",
+                content_type="text/csv",
+            ),
+            "some-key": "some-value",
+            "validation": FileSystemInput(
+                file_system_id="fs-1234",
+                file_system_type="EFS",
+                directory_path="/some/path",
+                file_system_access_mode="ro",
+            ),
+        },
     )
 
     sm_lambda_step = LambdaStep(
