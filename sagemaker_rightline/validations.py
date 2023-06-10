@@ -637,18 +637,15 @@ class StepInputsAsExpected(Validation):
             self.step_type_filter = f"step_type/value=={step_type}"
 
         inputs_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
-        inputs_observed_formatted = []
-        inputs_expected_formatted = []
+
         if self.step_type_filter == "step_type/value==Processing":
             # ProcessingStep has a list of ProcessingInput
-            inputs_observed_formatted += [x.__dict__ for y in inputs_observed for x in y]
-            inputs_expected_formatted += [x.__dict__ for x in self.inputs_expected]
+            inputs_observed_formatted = [x.__dict__ for y in inputs_observed for x in y]
+            inputs_expected_formatted = [x.__dict__ for x in self.inputs_expected]
         elif self.step_type_filter == "step_type/value==Training":
             # TrainingStep has a dict with values potentially being TrainingInput or FileSystemInput
-            inputs_observed_formatted += StepInputsAsExpected.format_training_inputs(
-                inputs_observed
-            )
-            inputs_expected_formatted += StepInputsAsExpected.format_training_inputs(
+            inputs_observed_formatted = StepInputsAsExpected.format_training_inputs(inputs_observed)
+            inputs_expected_formatted = StepInputsAsExpected.format_training_inputs(
                 self.inputs_expected
             )
         result = self.rule.run(inputs_observed_formatted, inputs_expected_formatted, self.name)
