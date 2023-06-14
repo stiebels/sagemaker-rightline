@@ -1,6 +1,6 @@
 import boto3
 from moto import mock_ecr
-from sagemaker.processing import NetworkConfig, ProcessingInput
+from sagemaker.processing import NetworkConfig, ProcessingInput, ProcessingOutput
 from sagemaker.workflow.parameters import ParameterString
 
 from sagemaker_rightline.model import Configuration
@@ -13,6 +13,7 @@ from sagemaker_rightline.validations import (
     StepKmsKeyIdAsExpected,
     StepLambdaFunctionExists,
     StepNetworkConfigAsExpected,
+    StepOutputsAsExpected,
     StepRoleNameAsExpected,
     StepRoleNameExists,
     StepTagsAsExpected,
@@ -87,6 +88,17 @@ if __name__ == "__main__":
                         )
                     ],
                     step_type="Processing",  # either step_type or step_name must be set to filter
+                    rule=Contains(),
+                ),
+                StepOutputsAsExpected(
+                    outputs_expected=[
+                        ProcessingOutput(
+                            source="/opt/ml/processing/output",
+                            destination=f"s3://{DUMMY_BUCKET}/output-1",
+                            output_name="output-1",
+                        )
+                    ],
+                    step_name="sm_processing_step_spark",  # optional
                     rule=Contains(),
                 ),
             ]
