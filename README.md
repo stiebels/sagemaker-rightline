@@ -42,6 +42,7 @@ The following `Validations` are currently implemented:
   - `StepRoleNameAsExpected`
   - `StepTagsAsExpected`
   - `StepInputsAsExpected`
+  - `StepOutputsAsExpected`
 
 In most cases, a `Validation` subclass requires passing a `Rule` object to its constructor.
 
@@ -67,7 +68,7 @@ to allow for further analysis.
 ## Usage
 
 ```python
-from sagemaker.processing import NetworkConfig, ProcessingInput
+from sagemaker.processing import NetworkConfig, ProcessingInput, ProcessingOutput
 from sagemaker.workflow.parameters import ParameterString
 from sagemaker_rightline.model import Configuration
 from sagemaker_rightline.rules import Contains, Equals
@@ -81,6 +82,7 @@ from sagemaker_rightline.validations import (
     StepRoleNameAsExpected,
     StepTagsAsExpected,
     StepInputsAsExpected,
+    StepOutputsAsExpected,
 )
 
 # Import a dummy pipeline
@@ -136,6 +138,17 @@ validations = [
             )
         ],
         step_type="Processing",  # either step_type or step_name must be set to filter
+        rule=Contains(),
+    ),
+    StepOutputsAsExpected(
+        outputs_expected=[
+            ProcessingOutput(
+                source="/opt/ml/processing/output",
+                destination=f"s3://{DUMMY_BUCKET}/output-1",
+                output_name="output-1",
+            )
+        ],
+        step_name="sm_processing_step_spark",  # optional
         rule=Contains(),
     ),
 ]

@@ -6,7 +6,7 @@ import boto3
 from botocore.exceptions import ClientError
 from sagemaker.estimator import Estimator
 from sagemaker.inputs import FileSystemInput, TrainingInput
-from sagemaker.processing import NetworkConfig, ProcessingInput
+from sagemaker.processing import NetworkConfig, ProcessingInput, ProcessingOutput
 from sagemaker.workflow.entities import PipelineVariable
 from sagemaker.workflow.parameters import Parameter
 from sagemaker.workflow.pipeline import Pipeline
@@ -623,7 +623,7 @@ class StepInputsAsExpected(Validation):
         self,
         sagemaker_pipeline: Pipeline,
     ) -> ValidationResult:
-        """Runs validation of Parameters on Pipeline.
+        """Runs validation of Step Inputs on Pipeline.
 
         :param sagemaker_pipeline: SageMaker Pipeline
         :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
@@ -649,4 +649,60 @@ class StepInputsAsExpected(Validation):
                 self.inputs_expected
             )
         result = self.rule.run(inputs_observed_formatted, inputs_expected_formatted, self.name)
+        return result
+
+
+class StepOutputsAsExpected(Validation):
+    """Validate Outputs of Pipeline Step.
+
+    Supported only for ProcessingStep. This validation is useful when
+    you want to ensure that the Outputs of a Pipeline Step are as
+    expected.
+    """
+
+    def __init__(
+        self,
+        outputs_expected: List[ProcessingOutput],
+        rule: Rule,
+        step_name: Optional[str] = None,
+    ) -> None:
+        """Initialize StepTagsAsExpected validation.
+
+        :param outputs_expected: Expected Inputs
+        :type outputs_expected: List[ProcessingOutput]
+        :param rule: Rule to use for validation
+        :type rule: Rule
+        :param step_name: Name of Step to validate, defaults to None
+        :type step_name: Optional[str], optional
+        :return: None
+        :rtype: None
+        """
+
+        self.step_filter: str = f"name=={step_name}" if step_name else ""
+
+        super().__init__(
+            name="StepOutputsAsExpected",
+            paths=[
+                f".steps[{self.step_filter} && step_type/value==Processing]].outputs",
+            ],
+            rule=rule,
+        )
+        self.outputs_expected: List[ProcessingOutput] = outputs_expected
+
+    def run(
+        self,
+        sagemaker_pipeline: Pipeline,
+    ) -> ValidationResult:
+        """Runs validation of StepOutputs on Pipeline.
+
+        :param sagemaker_pipeline: SageMaker Pipeline
+        :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
+        :return: validation result
+        :rtype: ValidationResult
+        """
+
+        outputs_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
+        outputs_observed_formatted = [x.__dict__ for y in outputs_observed for x in y]
+        outputs_expected_formatted = [x.__dict__ for x in self.outputs_expected]
+        result = self.rule.run(outputs_observed_formatted, outputs_expected_formatted, self.name)
         return result

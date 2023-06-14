@@ -1,7 +1,7 @@
 import pytest
 from moto import mock_ecr, mock_iam, mock_lambda
 from sagemaker.inputs import FileSystemInput, TrainingInput
-from sagemaker.processing import NetworkConfig, ProcessingInput
+from sagemaker.processing import NetworkConfig, ProcessingInput, ProcessingOutput
 from sagemaker.workflow.parameters import ParameterString
 
 from sagemaker_rightline.model import Validation, ValidationResult
@@ -14,6 +14,7 @@ from sagemaker_rightline.validations import (
     StepKmsKeyIdAsExpected,
     StepLambdaFunctionExists,
     StepNetworkConfigAsExpected,
+    StepOutputsAsExpected,
     StepRoleNameAsExpected,
     StepRoleNameExists,
     StepTagsAsExpected,
@@ -695,3 +696,113 @@ def test_step_inputs_as_expected_args_validation_neither() -> None:
             inputs_expected=[],
             rule=Equals(),
         )
+
+
+@pytest.mark.parametrize(
+    "rule,outputs_expected,success",
+    [
+        [
+            Contains,
+            [
+                ProcessingOutput(
+                    output_name="output-1",
+                    source="/opt/ml/processing/output/1",
+                    destination=f"s3://{DUMMY_BUCKET}/output-1",
+                ),
+                ProcessingOutput(
+                    output_name="output-2",
+                    source="/opt/ml/processing/output/2",
+                    destination=f"s3://{DUMMY_BUCKET}/output-2",
+                ),
+            ],
+            True,
+        ],
+        [
+            Contains,
+            [
+                ProcessingOutput(
+                    output_name="output-999",
+                    source="/opt/ml/processing/output/1",
+                    destination=f"s3://{DUMMY_BUCKET}/output-1",
+                ),
+                ProcessingOutput(
+                    output_name="output-2",
+                    source="/opt/ml/processing/output/2",
+                    destination=f"s3://{DUMMY_BUCKET}/output-2",
+                ),
+            ],
+            False,
+        ],
+        [
+            Equals,
+            [
+                ProcessingOutput(
+                    output_name="output-1",
+                    source="/opt/ml/processing/output/1",
+                    destination=f"s3://{DUMMY_BUCKET}/output-1",
+                ),
+                ProcessingOutput(
+                    output_name="output-2",
+                    source="/opt/ml/processing/output/2",
+                    destination=f"s3://{DUMMY_BUCKET}/output-2",
+                ),
+            ],
+            False,
+        ],
+    ],
+)
+def test_step_outputs_as_expected_no_filter(
+    rule, outputs_expected, success, sagemaker_pipeline
+) -> None:
+    step_outputs_validation = StepOutputsAsExpected(
+        outputs_expected=outputs_expected,
+        rule=rule(),
+    )
+    result = step_outputs_validation.run(sagemaker_pipeline)
+    assert result.success == success
+
+
+@pytest.mark.parametrize(
+    "rule,outputs_expected,step_name,success",
+    [
+        [
+            Equals,
+            [
+                ProcessingOutput(
+                    output_name="output-1",
+                    source="/opt/ml/processing/output/1",
+                    destination=f"s3://{DUMMY_BUCKET}/output-1",
+                ),
+                ProcessingOutput(
+                    output_name="output-2",
+                    source="/opt/ml/processing/output/2",
+                    destination=f"s3://{DUMMY_BUCKET}/output-2",
+                ),
+            ],
+            "sm_processing_step_sklearn",
+            True,
+        ],
+        [
+            Contains,
+            [
+                ProcessingOutput(
+                    output_name="output-2",
+                    source="/opt/ml/processing/output/2",
+                    destination=f"s3://{DUMMY_BUCKET}/output-2",
+                ),
+            ],
+            "sm_processing_step_sklearn",
+            True,
+        ],
+    ],
+)
+def test_step_outputs_as_expected_filter(
+    rule, outputs_expected, step_name, success, sagemaker_pipeline
+) -> None:
+    step_outputs_validation = StepOutputsAsExpected(
+        outputs_expected=outputs_expected,
+        step_name=step_name,
+        rule=rule(),
+    )
+    result = step_outputs_validation.run(sagemaker_pipeline)
+    assert result.success == success
