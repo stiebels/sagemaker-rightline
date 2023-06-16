@@ -805,7 +805,7 @@ class StepOutputsMatchInputsAsExpected(Validation):
                 output_step, output_name, output_kw
             )
             results.append((input.source, output.destination))
-
+        return results
         return self.rule.run(
             observed=[x[0] for x in results],
             expected=[x[1] for x in results],

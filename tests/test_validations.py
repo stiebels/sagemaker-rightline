@@ -571,7 +571,7 @@ def test_step_inputs_as_expected_no_filter(
             Equals,
             [
                 ProcessingInput(
-                    source=f"s3://{DUMMY_BUCKET}/input-1",
+                    source=f"s3://{DUMMY_BUCKET}/output-1",
                     destination="/opt/ml/processing/input",
                     input_name="input-1",
                 ),
@@ -593,7 +593,7 @@ def test_step_inputs_as_expected_no_filter(
                     input_name="input-2",
                 ),
                 ProcessingInput(
-                    source=f"s3://{DUMMY_BUCKET}/input-1",
+                    source=f"s3://{DUMMY_BUCKET}/output-1",
                     destination="/opt/ml/processing/input",
                     input_name="input-1",
                 ),
