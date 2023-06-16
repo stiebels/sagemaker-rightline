@@ -43,6 +43,7 @@ The following `Validations` are currently implemented:
   - `StepTagsAsExpected`
   - `StepInputsAsExpected`
   - `StepOutputsAsExpected`
+  - `StepInputOutputAsExpected`
 
 In most cases, a `Validation` subclass requires passing a `Rule` object to its constructor.
 
@@ -83,6 +84,7 @@ from sagemaker_rightline.validations import (
     StepTagsAsExpected,
     StepInputsAsExpected,
     StepOutputsAsExpected,
+    StepOutputsMatchInputsAsExpected,
 )
 
 # Import a dummy pipeline
@@ -150,6 +152,20 @@ validations = [
         ],
         step_name="sm_processing_step_spark",  # optional
         rule=Contains(),
+    ),
+    StepOutputsMatchInputsAsExpected(
+        inputs_outputs_expected=[
+            {
+                "input": {
+                    "step_name": "sm_processing_step_sklearn",
+                    "input_name": "input-1",
+                },
+                "output": {
+                    "step_name": "sm_processing_step_sklearn",
+                    "output_name": "output-1",
+                },
+            }
+        ]
     ),
 ]
 

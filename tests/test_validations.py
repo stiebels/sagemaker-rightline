@@ -15,6 +15,7 @@ from sagemaker_rightline.validations import (
     StepLambdaFunctionExists,
     StepNetworkConfigAsExpected,
     StepOutputsAsExpected,
+    StepOutputsMatchInputsAsExpected,
     StepRoleNameAsExpected,
     StepRoleNameExists,
     StepTagsAsExpected,
@@ -570,7 +571,7 @@ def test_step_inputs_as_expected_no_filter(
             Equals,
             [
                 ProcessingInput(
-                    source=f"s3://{DUMMY_BUCKET}/input-1",
+                    source=f"s3://{DUMMY_BUCKET}/output-1",
                     destination="/opt/ml/processing/input",
                     input_name="input-1",
                 ),
@@ -592,7 +593,7 @@ def test_step_inputs_as_expected_no_filter(
                     input_name="input-2",
                 ),
                 ProcessingInput(
-                    source=f"s3://{DUMMY_BUCKET}/input-1",
+                    source=f"s3://{DUMMY_BUCKET}/output-1",
                     destination="/opt/ml/processing/input",
                     input_name="input-1",
                 ),
@@ -806,3 +807,86 @@ def test_step_outputs_as_expected_filter(
     )
     result = step_outputs_validation.run(sagemaker_pipeline)
     assert result.success == success
+
+
+@pytest.mark.parametrize(
+    "inputs_outputs_expected,success,raise_error",
+    [
+        [
+            [
+                {
+                    "input": {
+                        "step_name": "sm_processing_step_sklearn",
+                        "input_name": "input-1",
+                    },
+                    "output": {
+                        "step_name": "sm_processing_step_sklearn",
+                        "output_name": "output-1",
+                    },
+                }
+            ],
+            True,
+            False,
+        ],
+        [
+            [
+                {
+                    "input": {
+                        "step_name": "sm_processing_step_sklearn",
+                        "input_name": "input-1",
+                    },
+                    "output": {
+                        "step_name": "sm_processing_step_sklearn",
+                        "output_name": "output-2",
+                    },
+                }
+            ],
+            False,
+            False,
+        ],
+        [
+            [
+                {
+                    "input": {
+                        "step_name": "sm_processing_step_sklearn",
+                        "input_name": "input-1",
+                    },
+                    "output": {
+                        "step_name": "step_doesnt_exist",
+                        "output_name": "output-1",
+                    },
+                }
+            ],
+            False,
+            True,
+        ],
+        [
+            [
+                {
+                    "input": {
+                        "step_name": "sm_processing_step_sklearn",
+                        "input_name": "input-doesnt-exist1",
+                    },
+                    "output": {
+                        "step_name": "sm_processing_step_sklearn",
+                        "output_name": "output-1",
+                    },
+                }
+            ],
+            False,
+            True,
+        ],
+    ],
+)
+def test_step_outputs_match_inputs_as_expected(
+    sagemaker_pipeline, inputs_outputs_expected, success, raise_error
+) -> None:
+    step_outputs_validation = StepOutputsMatchInputsAsExpected(
+        inputs_outputs_expected=inputs_outputs_expected,
+    )
+    if raise_error:
+        with pytest.raises((ValueError, AttributeError)):
+            _ = step_outputs_validation.run(sagemaker_pipeline)
+    else:
+        result = step_outputs_validation.run(sagemaker_pipeline)
+        assert result.success is success

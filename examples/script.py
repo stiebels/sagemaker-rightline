@@ -14,6 +14,7 @@ from sagemaker_rightline.validations import (
     StepLambdaFunctionExists,
     StepNetworkConfigAsExpected,
     StepOutputsAsExpected,
+    StepOutputsMatchInputsAsExpected,
     StepRoleNameAsExpected,
     StepRoleNameExists,
     StepTagsAsExpected,
@@ -100,6 +101,20 @@ if __name__ == "__main__":
                     ],
                     step_name="sm_processing_step_spark",  # optional
                     rule=Contains(),
+                ),
+                StepOutputsMatchInputsAsExpected(
+                    inputs_outputs_expected=[
+                        {
+                            "input": {
+                                "step_name": "sm_processing_step_sklearn",
+                                "input_name": "input-1",
+                            },
+                            "output": {
+                                "step_name": "sm_processing_step_sklearn",
+                                "output_name": "output-1",
+                            },
+                        }
+                    ]
                 ),
             ]
             cm = Configuration(

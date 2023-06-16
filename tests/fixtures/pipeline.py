@@ -78,7 +78,7 @@ def get_sagemaker_pipeline(
         kms_key="some/kms-key-alias",
         inputs=[
             ProcessingInput(
-                source=f"s3://{DUMMY_BUCKET}/input-1",
+                source=f"s3://{DUMMY_BUCKET}/output-1",
                 destination="/opt/ml/processing/input",
                 input_name="input-1",
             ),
