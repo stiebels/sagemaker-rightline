@@ -12,6 +12,7 @@ from sagemaker.workflow.parameters import Parameter
 from sagemaker.workflow.pipeline import Pipeline
 
 from sagemaker_rightline.model import Rule, Validation, ValidationResult
+from sagemaker_rightline.rules import Equals
 
 
 class PipelineParametersAsExpected(Validation):
@@ -706,3 +707,107 @@ class StepOutputsAsExpected(Validation):
         outputs_expected_formatted = [x.__dict__ for x in self.outputs_expected]
         result = self.rule.run(outputs_observed_formatted, outputs_expected_formatted, self.name)
         return result
+
+
+class StepOutputsMatchInputsAsExpected(Validation):
+    """Validate Outputs <> Inputs of Pipeline Step."""
+
+    def __init__(self, inputs_outputs_expected: List[Dict[str, Dict[str, str]]]) -> None:
+        """Initialize StepTagsAsExpected validation.
+
+        :param inputs_outputs_expected: Expected Input and Output per step name
+        :type inputs_outputs_expected: Dict[str, Dict[str, str]]
+        :return: None
+        :rtype: None
+        """
+        name = "StepOutputsMatchInputsAsExpected"
+        super().__init__(
+            name=name,
+            rule=Equals(),
+        )
+        self.inputs_outputs_expected: List[Dict[str, Dict[str, str]]] = inputs_outputs_expected
+
+    @staticmethod
+    def get_step_by_name(
+        sagemaker_pipeline: Pipeline, step_name: str
+    ) -> "ProcessingStep":  # noqa F821
+        """Get ProcessingStep by name.
+
+        :param sagemaker_pipeline: SageMaker Pipeline
+        :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
+        :param step_name: Name of Step
+        :type step_name: str
+        :return: ProcessingStep
+        :rtype: ProcessingStep
+        """
+        for step in sagemaker_pipeline.steps:
+            if step.name == step_name:
+                return step
+        raise ValueError(f"Step {step_name} not found in Pipeline")
+
+    @staticmethod
+    def get_input_output_by_name(
+        step: "ProcessingStep", name: str, kind: str  # noqa F821
+    ) -> Union["ProcessingInput", "ProcessingOutput"]:
+        """Get ProcessingInput or ProcessingOutput by name.
+
+        :param step: ProcessingStep
+        :type step: ProcessingStep
+        :param name: Name of Input or Output
+        :type name: str
+        :return: ProcessingInput or ProcessingOutput
+        :rtype: Union[ProcessingInput, ProcessingOutput]
+        """
+        if kind == "input":
+            for input in step.inputs:
+                if input.input_name == name:
+                    return input
+        elif kind == "output":
+            for output in step.outputs:
+                if output.output_name == name:
+                    return output
+        else:
+            raise ValueError(f"Kind {kind} not supported. Must be one of 'input' or 'output'.")
+
+    def run(
+        self,
+        sagemaker_pipeline: Pipeline,
+    ) -> ValidationResult:
+        """Runs validation of Step Inputs on Pipeline.
+
+        :param sagemaker_pipeline: SageMaker Pipeline
+        :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
+        :return: validation result
+        :rtype: ValidationResult
+        """
+
+        input_kw = "input"
+        output_kw = "output"
+
+        results = []
+        for pair in self.inputs_outputs_expected:
+            input_step_name = pair[input_kw]["step_name"]
+            input_name = pair[input_kw]["input_name"]
+            output_step_name = pair[output_kw]["step_name"]
+            output_name = pair[output_kw]["output_name"]
+
+            input_step = StepOutputsMatchInputsAsExpected.get_step_by_name(
+                sagemaker_pipeline, input_step_name
+            )
+            output_step = StepOutputsMatchInputsAsExpected.get_step_by_name(
+                sagemaker_pipeline, output_step_name
+            )
+
+            input = StepOutputsMatchInputsAsExpected.get_input_output_by_name(
+                input_step, input_name, input_kw
+            )
+            output = StepOutputsMatchInputsAsExpected.get_input_output_by_name(
+                output_step, output_name, output_kw
+            )
+            results.append((input.source, output.destination))
+
+        return self.rule.run(
+            observed=[x[0] for x in results],
+            expected=[x[1] for x in results],
+            validation_name=self.name,
+        )

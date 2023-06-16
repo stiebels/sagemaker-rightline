@@ -56,7 +56,9 @@ class Rule(ABC):
 class Validation(ABC):
     """Abstract class for validations."""
 
-    def __init__(self, paths: List[str], name: str, rule: Optional[Rule] = None) -> None:
+    def __init__(
+        self, name: str, paths: Optional[List[str]] = None, rule: Optional[Rule] = None
+    ) -> None:
         """Initialize a Validation object.
 
         :param paths: list of paths to the attributes to be validated
@@ -68,7 +70,7 @@ class Validation(ABC):
         :return:
         :rtype:
         """
-        self.paths: List[str] = paths
+        self.paths: List[Optional[str]] = paths if paths else []
         self.name: str = name
         self.rule: Rule = rule
 
