@@ -731,7 +731,7 @@ class StepOutputsMatchInputsAsExpected(Validation):
     def get_step_by_name(
         sagemaker_pipeline: Pipeline, step_name: str
     ) -> "ProcessingStep":  # noqa F821
-        """Get ProcessingStep by name.
+        """Get ProcessingStep, TrainingStep by name.
 
         :param sagemaker_pipeline: SageMaker Pipeline
         :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
@@ -740,32 +740,47 @@ class StepOutputsMatchInputsAsExpected(Validation):
         :return: ProcessingStep
         :rtype: ProcessingStep
         """
+        supported_step_types = ("Processing", "Training")
         for step in sagemaker_pipeline.steps:
-            if step.name == step_name:
+            if step.name == step_name and step.step_type.value in supported_step_types:
                 return step
-        raise ValueError(f"Step {step_name} not found in Pipeline")
+        raise ValueError(f"Processing or Training Step {step_name} not found in Pipeline.")
 
     @staticmethod
     def get_input_output_by_name(
-        step: "ProcessingStep", name: str, kind: str  # noqa F821
-    ) -> Union["ProcessingInput", "ProcessingOutput"]:
+        step: Union["ProcessingStep", "TrainingStep"], name: str, kind: str  # noqa F821
+    ) -> str:
         """Get ProcessingInput or ProcessingOutput by name.
 
         :param step: ProcessingStep
         :type step: ProcessingStep
         :param name: Name of Input or Output
         :type name: str
-        :return: ProcessingInput or ProcessingOutput
-        :rtype: Union[ProcessingInput, ProcessingOutput]
+        :param kind: Kind of Input or Output, must be one of "input" or "output"
+        :type kind: str
+        :return: Input or Output path
+        :rtype: str
         """
+        step_type = step.step_type.value
+
         if kind == "input":
-            for input in step.inputs:
-                if input.input_name == name:
-                    return input
+            if step_type == "Training":
+                input = step.inputs[name]
+                if isinstance(input, TrainingInput):
+                    return str(input.config["DataSource"]["S3DataSource"]["S3Uri"])
+                else:
+                    raise ValueError(f"Input {name} is not of type TrainingInput.")
+            else:
+                # If ProcessingStep
+                for input in step.inputs:
+                    if input.input_name == name:
+                        return str(input.source)
+                raise ValueError(f"Input {name} not found in ProcessingStep.")
+
         elif kind == "output":
             for output in step.outputs:
                 if output.output_name == name:
-                    return output
+                    return str(output.destination)
         else:
             raise ValueError(f"Kind {kind} not supported. Must be one of 'input' or 'output'.")
 
@@ -804,7 +819,7 @@ class StepOutputsMatchInputsAsExpected(Validation):
             output = StepOutputsMatchInputsAsExpected.get_input_output_by_name(
                 output_step, output_name, output_kw
             )
-            results.append((input.source, output.destination))
+            results.append((input, output))
         return self.rule.run(
             observed=[x[0] for x in results],
             expected=[x[1] for x in results],

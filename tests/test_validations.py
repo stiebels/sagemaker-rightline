@@ -527,7 +527,7 @@ def test_step_tags_as_expected_no_filter(rule, tags_expected, success, sagemaker
             [
                 {
                     "train": TrainingInput(
-                        s3_data=f"s3://{DUMMY_BUCKET}/some-prefix/validation",
+                        s3_data=f"s3://{DUMMY_BUCKET}/output-4",
                         content_type="text/csv",
                     )
                 }
@@ -606,7 +606,7 @@ def test_step_inputs_as_expected_no_filter(
             [
                 {
                     "train": TrainingInput(
-                        s3_data=f"s3://{DUMMY_BUCKET}/some-prefix/validation",
+                        s3_data=f"s3://{DUMMY_BUCKET}/output-4",
                         content_type="text/csv",
                     ),
                     "validation": FileSystemInput(
@@ -626,7 +626,7 @@ def test_step_inputs_as_expected_no_filter(
             [
                 {
                     "train": TrainingInput(
-                        s3_data=f"s3://{DUMMY_BUCKET}/some-prefix/validation",
+                        s3_data=f"s3://{DUMMY_BUCKET}/output-4",
                         content_type="text/csv",
                     ),
                     "some-key": "some-value",
@@ -870,6 +870,38 @@ def test_step_outputs_as_expected_filter(
                     "output": {
                         "step_name": "sm_processing_step_sklearn",
                         "output_name": "output-1",
+                    },
+                }
+            ],
+            False,
+            True,
+        ],
+        [
+            [
+                {
+                    "input": {
+                        "step_name": "sm_training_step_sklearn",
+                        "input_name": "train",
+                    },
+                    "output": {
+                        "step_name": "sm_processing_step_spark",
+                        "output_name": "output-2",
+                    },
+                }
+            ],
+            True,
+            False,
+        ],
+        [
+            [
+                {
+                    "input": {
+                        "step_name": "sm_training_step_sklearn",
+                        "input_name": "validation",
+                    },
+                    "output": {
+                        "step_name": "sm_processing_step_spark",
+                        "output_name": "output-2",
                     },
                 }
             ],

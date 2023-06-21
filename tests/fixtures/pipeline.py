@@ -140,7 +140,7 @@ def get_sagemaker_pipeline(
         depends_on=[sm_processing_step_spark.name],
         inputs={
             "train": TrainingInput(
-                s3_data=f"s3://{DUMMY_BUCKET}/some-prefix/validation",
+                s3_data=f"s3://{DUMMY_BUCKET}/output-4",
                 content_type="text/csv",
             ),
             "some-key": "some-value",
