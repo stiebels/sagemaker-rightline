@@ -43,7 +43,8 @@ The following `Validations` are currently implemented:
   - `StepTagsAsExpected`
   - `StepInputsAsExpected`
   - `StepOutputsAsExpected`
-  - `StepInputOutputAsExpected`
+  - `StepOutputsMatchInputsAsExpected`
+  - `StepCallbackSqsQueueExists`
 
 In most cases, a `Validation` subclass requires passing a `Rule` object to its constructor.
 
@@ -85,6 +86,7 @@ from sagemaker_rightline.validations import (
     StepInputsAsExpected,
     StepOutputsAsExpected,
     StepOutputsMatchInputsAsExpected,
+    StepCallbackSqsQueueExists,
 )
 
 # Import a dummy pipeline
@@ -167,6 +169,7 @@ validations = [
             }
         ]
     ),
+    StepCallbackSqsQueueExists(),
 ]
 
 # Add Validations and SageMaker Pipeline to Configuration

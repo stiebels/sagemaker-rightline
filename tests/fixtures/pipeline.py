@@ -2,6 +2,11 @@ from sagemaker.inputs import FileSystemInput, TrainingInput
 from sagemaker.processing import NetworkConfig, ScriptProcessor
 from sagemaker.sklearn.estimator import SKLearn
 from sagemaker.spark.processing import PySparkProcessor
+from sagemaker.workflow.callback_step import (
+    CallbackOutput,
+    CallbackOutputTypeEnum,
+    CallbackStep,
+)
 from sagemaker.workflow.functions import Join
 from sagemaker.workflow.lambda_step import LambdaStep
 from sagemaker.workflow.parameters import ParameterString
@@ -13,7 +18,11 @@ from sagemaker.workflow.steps import (
     TrainingStep,
 )
 
-from tests.fixtures.constants import TEST_LAMBDA_FUNC_NAME, TEST_ROLE_ARN
+from tests.fixtures.constants import (
+    TEST_LAMBDA_FUNC_NAME,
+    TEST_ROLE_ARN,
+    TEST_SQS_QUEUE_URL,
+)
 from tests.fixtures.image_details import IMAGE_1_URI, IMAGE_2_URI
 
 
@@ -186,6 +195,16 @@ def get_sagemaker_pipeline(
         depends_on=[sm_training_step_sklearn.name],
     )
 
+    sm_callback_step = CallbackStep(
+        name="sm_callback_step",
+        inputs={
+            "some": "input",
+        },
+        outputs=[CallbackOutput(output_name="output1", output_type=CallbackOutputTypeEnum.String)],
+        sqs_queue_url=TEST_SQS_QUEUE_URL,
+        depends_on=[sm_lambda_step.name],
+    )
+
     sm_pipeline = Pipeline(
         name="dummy-pipeline",
         steps=[
@@ -193,6 +212,7 @@ def get_sagemaker_pipeline(
             sm_processing_step_spark,
             sm_training_step_sklearn,
             sm_lambda_step,
+            sm_callback_step,
         ],
         parameters=[
             ParameterString(
