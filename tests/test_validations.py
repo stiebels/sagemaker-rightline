@@ -2,7 +2,9 @@ import pytest
 from moto import mock_ecr, mock_iam, mock_lambda
 from sagemaker.inputs import FileSystemInput, TrainingInput
 from sagemaker.processing import NetworkConfig, ProcessingInput, ProcessingOutput
+from sagemaker.workflow.functions import Join
 from sagemaker.workflow.parameters import ParameterString
+from sagemaker.workflow.pipeline import ExecutionVariables
 
 from sagemaker_rightline.model import Validation, ValidationResult
 from sagemaker_rightline.rules import Contains, Equals
@@ -779,6 +781,19 @@ def test_step_outputs_as_expected_no_filter(
                     source="/opt/ml/processing/output/2",
                     destination=f"s3://{DUMMY_BUCKET}/output-2",
                 ),
+                ProcessingOutput(
+                    output_name="output-3",
+                    source="/opt/ml/processing/output/3",
+                    destination=Join(
+                        on="/",
+                        values=[
+                            "s3:/",
+                            DUMMY_BUCKET,
+                            ExecutionVariables.PIPELINE_EXECUTION_ID,
+                            "output-3",
+                        ],
+                    ),
+                ),
             ],
             "sm_processing_step_sklearn",
             True,
@@ -842,6 +857,22 @@ def test_step_outputs_as_expected_filter(
                 }
             ],
             False,
+            False,
+        ],
+        [
+            [
+                {
+                    "input": {
+                        "step_name": "sm_processing_step_spark",
+                        "input_name": "input-3",
+                    },
+                    "output": {
+                        "step_name": "sm_processing_step_sklearn",
+                        "output_name": "output-3",
+                    },
+                }
+            ],
+            True,
             False,
         ],
         [

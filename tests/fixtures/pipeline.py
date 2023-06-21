@@ -2,9 +2,10 @@ from sagemaker.inputs import FileSystemInput, TrainingInput
 from sagemaker.processing import NetworkConfig, ScriptProcessor
 from sagemaker.sklearn.estimator import SKLearn
 from sagemaker.spark.processing import PySparkProcessor
+from sagemaker.workflow.functions import Join
 from sagemaker.workflow.lambda_step import LambdaStep
 from sagemaker.workflow.parameters import ParameterString
-from sagemaker.workflow.pipeline import Pipeline
+from sagemaker.workflow.pipeline import ExecutionVariables, Pipeline
 from sagemaker.workflow.steps import (
     ProcessingInput,
     ProcessingOutput,
@@ -99,6 +100,19 @@ def get_sagemaker_pipeline(
                 source="/opt/ml/processing/output/2",
                 destination=f"s3://{DUMMY_BUCKET}/output-2",
             ),
+            ProcessingOutput(
+                output_name="output-3",
+                source="/opt/ml/processing/output/3",
+                destination=Join(
+                    on="/",
+                    values=[
+                        "s3:/",
+                        DUMMY_BUCKET,
+                        ExecutionVariables.PIPELINE_EXECUTION_ID,
+                        "output-3",
+                    ],
+                ),
+            ),
         ],
     )
 
@@ -117,6 +131,19 @@ def get_sagemaker_pipeline(
                 source=f"s3://{DUMMY_BUCKET}/input-2",
                 destination="/opt/ml/processing/input",
                 input_name="input-2",
+            ),
+            ProcessingInput(
+                source=Join(
+                    on="/",
+                    values=[
+                        "s3:/",
+                        DUMMY_BUCKET,
+                        ExecutionVariables.PIPELINE_EXECUTION_ID,
+                        "output-3",
+                    ],
+                ),
+                destination="/opt/ml/processing/input",
+                input_name="input-3",
             ),
         ],
         outputs=[
