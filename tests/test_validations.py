@@ -1,5 +1,5 @@
 import pytest
-from moto import mock_ecr, mock_iam, mock_lambda
+from moto import mock_ecr, mock_iam, mock_lambda, mock_sqs
 from sagemaker.inputs import FileSystemInput, TrainingInput
 from sagemaker.processing import NetworkConfig, ProcessingInput, ProcessingOutput
 from sagemaker.workflow.functions import Join
@@ -11,6 +11,7 @@ from sagemaker_rightline.rules import Contains, Equals
 from sagemaker_rightline.validations import (
     ContainerImage,
     PipelineParametersAsExpected,
+    StepCallbackSqsQueueExists,
     StepImagesExist,
     StepInputsAsExpected,
     StepKmsKeyIdAsExpected,
@@ -27,6 +28,8 @@ from tests.fixtures.constants import (
     TEST_LAMBDA_FUNC_NAME,
     TEST_REGION_NAME,
     TEST_ROLE_NAME,
+    TEST_SQS_QUEUE_NAME,
+    TEST_SQS_QUEUE_URL_BASE,
 )
 from tests.fixtures.image_details import (
     IMAGE_1_REPOSITORY_NAME,
@@ -39,9 +42,11 @@ from tests.utils import (
     create_iam_role,
     create_image,
     create_lambda_function,
+    create_sqs_queue,
     ecr_client,
     iam_client,
     lambda_client,
+    sqs_client,
 )
 
 
@@ -111,6 +116,11 @@ def test_step_image_exists_wrong_client() -> None:
 def test_step_lambda_function_exists_wrong_client() -> None:
     with pytest.raises(ValueError):
         _ = StepLambdaFunctionExists(boto3_client="not-a-boto3-client")
+
+
+def test_step_sqs_queue_exists_wrong_client() -> None:
+    with pytest.raises(ValueError):
+        _ = StepCallbackSqsQueueExists(boto3_client="not-a-boto3-client")
 
 
 def test_step_role_name_exists_wrong_client() -> None:
@@ -953,3 +963,19 @@ def test_step_outputs_match_inputs_as_expected(
     else:
         result = step_outputs_validation.run(sagemaker_pipeline)
         assert result.success is success
+
+
+@mock_sqs
+@mock_iam
+def test_sqs_queue_exists_positive(sqs_client, iam_client, sagemaker_pipeline) -> None:
+    with create_sqs_queue(sqs_client, iam_client, [(TEST_SQS_QUEUE_NAME, TEST_SQS_QUEUE_URL_BASE)]):
+        sqs_queue_exists = StepCallbackSqsQueueExists()
+        result = sqs_queue_exists.run(sagemaker_pipeline)
+    assert result.success
+
+
+@mock_sqs
+def test_sqs_queue_exists_negative(sqs_client, iam_client, sagemaker_pipeline) -> None:
+    sqs_queue_exists = StepCallbackSqsQueueExists()
+    result = sqs_queue_exists.run(sagemaker_pipeline)
+    assert not result.success

@@ -861,7 +861,7 @@ class StepCallbackSqsQueueExists(Validation):
         self,
         sagemaker_pipeline: Pipeline,
     ) -> ValidationResult:
-        """Runs validation of Parameters on Pipeline.
+        """Runs validation on Pipeline.
 
         :param sagemaker_pipeline: SageMaker Pipeline
         :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
@@ -883,7 +883,7 @@ class StepCallbackSqsQueueExists(Validation):
             return ValidationResult(
                 success=False,
                 negative=False,
-                message=f"SQS Url {not_exist} does not exist.",
+                message=f"SQS url {not_exist} does not exist.",
                 subject=str(sqs_url_observed),
                 validation_name=self.name,
             )
@@ -891,7 +891,7 @@ class StepCallbackSqsQueueExists(Validation):
             return ValidationResult(
                 success=True,
                 negative=False,
-                message=f"Lambda Function {exist} exists.",
+                message=f"SQS url Function {exist} exists.",
                 subject=str(sqs_url_observed),
                 validation_name=self.name,
             )

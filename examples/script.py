@@ -8,6 +8,7 @@ from sagemaker_rightline.rules import Contains, Equals
 from sagemaker_rightline.validations import (
     ContainerImage,
     PipelineParametersAsExpected,
+    StepCallbackSqsQueueExists,
     StepImagesExist,
     StepInputsAsExpected,
     StepKmsKeyIdAsExpected,
@@ -116,6 +117,7 @@ if __name__ == "__main__":
                         }
                     ]
                 ),
+                StepCallbackSqsQueueExists(),
             ]
             cm = Configuration(
                 validations=validations,

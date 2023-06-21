@@ -24,6 +24,11 @@ def iam_client():
     return boto3.client("iam", region_name=TEST_REGION_NAME)
 
 
+@pytest.fixture(autouse=False)
+def sqs_client():
+    return boto3.client("sqs", region_name=TEST_REGION_NAME)
+
+
 @contextmanager
 def create_iam_role(iam_client, role_names: List[str]) -> None:
     for role_name in role_names:
@@ -53,6 +58,16 @@ def create_lambda_function(lambda_client, iam_client, function_names: List[str])
         yield
         for function_name in function_names:
             lambda_client.delete_function(FunctionName=function_name)
+
+
+@contextmanager
+def create_sqs_queue(sqs_client, iam_client, sqs_queue_names: List[str]) -> None:
+    with create_iam_role(iam_client, [TEST_ROLE_NAME]):
+        for name, _ in sqs_queue_names:
+            sqs_client.create_queue(QueueName=name)
+        yield
+        for name, url in sqs_queue_names:
+            sqs_client.delete_queue(QueueUrl=f"{url}/{name}")
 
 
 @contextmanager
