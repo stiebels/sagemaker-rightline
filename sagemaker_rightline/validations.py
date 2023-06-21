@@ -767,20 +767,20 @@ class StepOutputsMatchInputsAsExpected(Validation):
             if step_type == "Training":
                 input = step.inputs[name]
                 if isinstance(input, TrainingInput):
-                    return str(input.config["DataSource"]["S3DataSource"]["S3Uri"])
+                    return input.config["DataSource"]["S3DataSource"]["S3Uri"]
                 else:
                     raise ValueError(f"Input {name} is not of type TrainingInput.")
             else:
                 # If ProcessingStep
                 for input in step.inputs:
                     if input.input_name == name:
-                        return str(input.source)
+                        return input.source
                 raise ValueError(f"Input {name} not found in ProcessingStep.")
 
         elif kind == "output":
             for output in step.outputs:
                 if output.output_name == name:
-                    return str(output.destination)
+                    return output.destination
         else:
             raise ValueError(f"Kind {kind} not supported. Must be one of 'input' or 'output'.")
 
