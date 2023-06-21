@@ -825,3 +825,73 @@ class StepOutputsMatchInputsAsExpected(Validation):
             expected=[x[1] for x in results],
             validation_name=self.name,
         )
+
+
+class StepCallbackSqsQueueExists(Validation):
+    """Validate whether the SQS queue targeted by a CallbackStep exists."""
+
+    def __init__(
+        self,
+        boto3_client: Union["boto3.client('sqs')", str] = "sqs",  # noqa F821
+    ) -> None:
+        """Initialize StepCallbackSqsQueueExists validation.
+
+        :param boto3_client: Boto3 client to use for checking SQS queue existence,
+        defaults to "sqs"
+        :type boto3_client: Union["boto3.client('sqs')", str], optional
+        :raises ValueError: boto3_client must be 'sqs'
+        :return: None
+        :rtype: None
+        """
+        if isinstance(boto3_client, str) and boto3_client != "sqs":
+            raise ValueError(f"boto3_client must be 'sqs', not {boto3_client}.")
+        if boto3_client:
+            self.client = (
+                boto3_client if not isinstance(boto3_client, str) else boto3.client(boto3_client)
+            )
+
+        super().__init__(
+            name="StepCallbackSqsQueueExists",
+            paths=[
+                ".steps[step_type/value==Callback].sqs_queue_url",
+            ],
+        )
+
+    def run(
+        self,
+        sagemaker_pipeline: Pipeline,
+    ) -> ValidationResult:
+        """Runs validation of Parameters on Pipeline.
+
+        :param sagemaker_pipeline: SageMaker Pipeline
+        :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
+        :return: validation result
+        :rtype: ValidationResult
+        """
+        sqs_url_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
+        exist = []
+        not_exist = []
+        for url in sqs_url_observed:
+            try:
+                _ = self.client.get_queue_attributes(
+                    QueueUrl=url,
+                )
+                exist.append(url)
+            except ClientError:
+                not_exist.append(url)
+        if not_exist:
+            return ValidationResult(
+                success=False,
+                negative=False,
+                message=f"SQS Url {not_exist} does not exist.",
+                subject=str(sqs_url_observed),
+                validation_name=self.name,
+            )
+        else:
+            return ValidationResult(
+                success=True,
+                negative=False,
+                message=f"Lambda Function {exist} exists.",
+                subject=str(sqs_url_observed),
+                validation_name=self.name,
+            )
