@@ -2,6 +2,7 @@ from sagemaker.inputs import FileSystemInput, TrainingInput
 from sagemaker.processing import NetworkConfig, ScriptProcessor
 from sagemaker.sklearn.estimator import SKLearn
 from sagemaker.spark.processing import PySparkProcessor
+from sagemaker.tuner import ContinuousParameter, HyperparameterTuner
 from sagemaker.workflow.callback_step import (
     CallbackOutput,
     CallbackOutputTypeEnum,
@@ -16,6 +17,7 @@ from sagemaker.workflow.steps import (
     ProcessingOutput,
     ProcessingStep,
     TrainingStep,
+    TuningStep,
 )
 
 from tests.fixtures.constants import (
@@ -189,6 +191,36 @@ def get_sagemaker_pipeline(
         },
     )
 
+    sm_tuning_step = TuningStep(
+        name="sm_tuning_step",
+        depends_on=[sm_processing_step_spark.name],
+        inputs={
+            "train": TrainingInput(
+                s3_data=f"s3://{DUMMY_BUCKET}/output-4",
+                content_type="text/csv",
+            ),
+            "some-key": "some-value",
+            "validation": FileSystemInput(
+                file_system_id="fs-1234",
+                file_system_type="EFS",
+                directory_path="/some/path",
+                file_system_access_mode="ro",
+            ),
+        },
+        tuner=HyperparameterTuner(
+            estimator=sm_trainer_sklearn,
+            objective_metric_name="some-metric",
+            hyperparameter_ranges={
+                "some-hp": ContinuousParameter(0, 1),
+            },
+            metric_definitions=[
+                {"Name": "some-metric", "Regex": "some-regex"},
+            ],
+            max_jobs=2,
+            max_parallel_jobs=2,
+        ),
+    )
+
     sm_lambda_step = LambdaStep(
         name="sm_lambda_step",
         lambda_func=TEST_LAMBDA_FUNC_NAME,
@@ -211,6 +243,7 @@ def get_sagemaker_pipeline(
             sm_processing_step_sklearn,
             sm_processing_step_spark,
             sm_training_step_sklearn,
+            sm_tuning_step,
             sm_lambda_step,
             sm_callback_step,
         ],
