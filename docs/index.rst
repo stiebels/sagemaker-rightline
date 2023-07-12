@@ -42,13 +42,19 @@ For example, the ``StepImagesExist`` supports ``Processing`` and
 Steps of the named types of the ``Pipeline`` object reference indeed
 exist on the target ECR.
 
-The following ``Validations`` are currently implemented: -
-``PipelineParametersAsExpected`` - ``StepImagesExist`` -
-``StepKmsKeyIdAsExpected`` - ``StepNetworkConfigAsExpected`` -
-``StepLambdaFunctionExists`` - ``StepRoleNameExists`` -
-``StepRoleNameAsExpected`` - ``StepTagsAsExpected`` -
-``StepInputsAsExpected`` - ``StepOutputsAsExpected`` -
-``StepOutputsMatchInputsAsExpected`` - ``StepCallbackSqsQueueExists``
+The following ``Validations`` are currently implemented:
+-  ``PipelineParametersAsExpected``
+-  ``StepImagesExist``
+-  ``StepKmsKeyIdAsExpected``
+-  ``StepNetworkConfigAsExpected``
+-  ``StepLambdaFunctionExists``
+-  ``StepRoleNameExists``
+-  ``StepRoleNameAsExpected``
+-  ``StepTagsAsExpected``
+-  ``StepInputsAsExpected``
+-  ``StepOutputsAsExpected``
+-  ``StepOutputsMatchInputsAsExpected``
+-  ``StepCallbackSqsQueueExists``
 
 In most cases, a ``Validation`` subclass requires passing a ``Rule``
 object to its constructor.
@@ -66,8 +72,9 @@ matches the passed KMSKeyIDs.
 Note that not all ``Validations`` require a ``Rule`` object,
 e.g. ``StepImagesExist``.
 
-The following ``Rules`` are currently implemented: - ``Equals`` -
-``Contains``
+The following ``Rules`` are currently implemented:
+-  ``Equals``
+-  ``Contains``
 
 All rules support the ``negative`` parameter (default: ``False``), which
 allows for inverting the rule.
