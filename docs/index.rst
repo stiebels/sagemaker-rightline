@@ -203,10 +203,9 @@ Usage
    # Show the report
    df
 
-.. figure:: ./docs/report.png
-   :alt: img.png
+.. figure:: report.png
+   :alt: report.png
 
-   img.png
 
 Release
 -------
