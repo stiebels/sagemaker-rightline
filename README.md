@@ -1,6 +1,7 @@
 ![Test-Build-Workflow](https://github.com/stiebels/sagemaker-rightline/actions/workflows/python-package.yml/badge.svg)
 [![codecov](https://codecov.io/gh/stiebels/sagemaker-rightline/branch/main/graph/badge.svg?token=7TCW0GP1NV)](https://codecov.io/gh/stiebels/sagemaker-rightline)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/stiebels/sagemaker-rightline/issues)
+[![Documentation Status](https://readthedocs.org/projects/sagemaker-rightline/badge/?version=latest)](https://sagemaker-rightline.readthedocs.io/en/latest/?badge=latest)
 
 # sagemaker-rightline
 
