@@ -8,7 +8,7 @@ Note that at present, this package is in an early stage of development
 and is not yet ready for production use. We welcome contributions!
 
 Content
---------------
+-------
 
 *  `Features <#features>`__
 *  `Usage <#usage>`__
@@ -43,6 +43,7 @@ Steps of the named types of the ``Pipeline`` object reference indeed
 exist on the target ECR.
 
 The following ``Validations`` are currently implemented:
+
 *  ``PipelineParametersAsExpected``
 *  ``StepImagesExist``
 *  ``StepKmsKeyIdAsExpected``
@@ -73,6 +74,7 @@ Note that not all ``Validations`` require a ``Rule`` object,
 e.g. ``StepImagesExist``.
 
 The following ``Rules`` are currently implemented:
+
 *  ``Equals``
 *  ``Contains``
 
