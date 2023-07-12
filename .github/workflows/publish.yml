@@ -30,7 +30,7 @@ jobs:
 
   PyPI-Publish:
     needs: [Build]
-    name: Publish
+    name: Publish Package
     runs-on: ubuntu-latest
     environment:
       name: pypi

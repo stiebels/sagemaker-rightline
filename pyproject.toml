@@ -44,6 +44,11 @@ dev = [
     "build",
 ]
 
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+]
+
 [project.urls]
 "Homepage" = "https://github.com/stiebels/sagemaker-rightline"
 
