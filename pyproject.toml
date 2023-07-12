@@ -30,7 +30,7 @@ classifiers = [
 
 dependencies = [
     "boto3>=1.26",
-    "pandas==2",
+    "pandas==2.0.3",
     "sagemaker>=2.159",
 ]
 
