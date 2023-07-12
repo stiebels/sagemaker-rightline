@@ -740,20 +740,22 @@ class StepOutputsMatchInputsAsExpected(Validation):
         :return: ProcessingStep
         :rtype: ProcessingStep
         """
-        supported_step_types = ("Processing", "Training")
+        supported_step_types = ("Processing", "Training", "Tuning")
         for step in sagemaker_pipeline.steps:
             if step.name == step_name and step.step_type.value in supported_step_types:
                 return step
-        raise ValueError(f"Processing or Training Step {step_name} not found in Pipeline.")
+        raise ValueError(f"Processing, Training or Tuning Step {step_name} not found in Pipeline.")
 
     @staticmethod
     def get_input_output_by_name(
-        step: Union["ProcessingStep", "TrainingStep"], name: str, kind: str  # noqa F821
+        step: Union["ProcessingStep", "TrainingStep", "TuningStep"],  # noqa F821
+        name: str,
+        kind: str,  # noqa F821
     ) -> str:
         """Get ProcessingInput or ProcessingOutput by name.
 
-        :param step: ProcessingStep
-        :type step: ProcessingStep
+        :param step: step to run validation on
+        :type step: Union[ProcessingStep, TrainingStep, TuningStep]
         :param name: Name of Input or Output
         :type name: str
         :param kind: Kind of Input or Output, must be one of "input" or "output"
@@ -764,7 +766,8 @@ class StepOutputsMatchInputsAsExpected(Validation):
         step_type = step.step_type.value
 
         if kind == "input":
-            if step_type == "Training":
+            # If TrainingStep or TuningStep
+            if step_type in ("Training", "Tuning"):
                 input = step.inputs[name]
                 if isinstance(input, TrainingInput):
                     return input.config["DataSource"]["S3DataSource"]["S3Uri"]

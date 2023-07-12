@@ -949,6 +949,38 @@ def test_step_outputs_as_expected_filter(
             False,
             True,
         ],
+        [
+            [
+                {
+                    "input": {
+                        "step_name": "sm_tuning_step",
+                        "input_name": "train",
+                    },
+                    "output": {
+                        "step_name": "sm_processing_step_spark",
+                        "output_name": "output-2",
+                    },
+                }
+            ],
+            True,
+            False,
+        ],
+        [
+            [
+                {
+                    "input": {
+                        "step_name": "sm_tuning_step",
+                        "input_name": "validation",
+                    },
+                    "output": {
+                        "step_name": "sm_processing_step_spark",
+                        "output_name": "output-2",
+                    },
+                }
+            ],
+            False,
+            True,
+        ],
     ],
 )
 def test_step_outputs_match_inputs_as_expected(
