@@ -1,6 +1,3 @@
-|Test-Build-Workflow| |codecov| |Contributions Welcome| |Documentation
-Status|
-
 sagemaker-rightline
 ===================
 
