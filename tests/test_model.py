@@ -193,6 +193,7 @@ def test_validation_get_attribute_no_filter(sagemaker_pipeline) -> None:
         kms_key_alias_expected,
         kms_key_alias_expected,
         kms_key_alias_expected,
+        kms_key_alias_expected,
     ]
 
     validation = StepImagesExist()
