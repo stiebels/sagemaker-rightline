@@ -1,7 +1,8 @@
-from sagemaker.inputs import FileSystemInput, TrainingInput
+from sagemaker.inputs import FileSystemInput, TrainingInput, TransformInput
 from sagemaker.processing import NetworkConfig, ScriptProcessor
 from sagemaker.sklearn.estimator import SKLearn
 from sagemaker.spark.processing import PySparkProcessor
+from sagemaker.transformer import Transformer
 from sagemaker.tuner import ContinuousParameter, HyperparameterTuner
 from sagemaker.workflow.callback_step import (
     CallbackOutput,
@@ -17,6 +18,7 @@ from sagemaker.workflow.steps import (
     ProcessingOutput,
     ProcessingStep,
     TrainingStep,
+    TransformStep,
     TuningStep,
 )
 
@@ -221,10 +223,27 @@ def get_sagemaker_pipeline(
         ),
     )
 
+    transformer = Transformer(
+        model_name=sm_training_step_sklearn.properties.ModelArtifacts.S3ModelArtifacts,
+        instance_count=1,
+        instance_type="ml.m5.xlarge",
+        output_kms_key="some/kms-key-alias",
+        output_path=f"s3://{DUMMY_BUCKET}/transformer-output",
+    )
+
+    sm_transform_step = TransformStep(
+        name="sm_transform_step",
+        transformer=transformer,
+        inputs=TransformInput(
+            data=f"s3://{DUMMY_BUCKET}/output-4",
+        ),
+        depends_on=[sm_tuning_step.name],
+    )
+
     sm_lambda_step = LambdaStep(
         name="sm_lambda_step",
         lambda_func=TEST_LAMBDA_FUNC_NAME,
-        depends_on=[sm_training_step_sklearn.name],
+        depends_on=[sm_transform_step.name],
     )
 
     sm_callback_step = CallbackStep(
@@ -244,6 +263,7 @@ def get_sagemaker_pipeline(
             sm_processing_step_spark,
             sm_training_step_sklearn,
             sm_tuning_step,
+            sm_transform_step,
             sm_lambda_step,
             sm_callback_step,
         ],

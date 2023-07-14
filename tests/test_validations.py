@@ -1,6 +1,6 @@
 import pytest
 from moto import mock_ecr, mock_iam, mock_lambda, mock_sqs
-from sagemaker.inputs import FileSystemInput, TrainingInput
+from sagemaker.inputs import FileSystemInput, TrainingInput, TransformInput
 from sagemaker.processing import NetworkConfig, ProcessingInput, ProcessingOutput
 from sagemaker.workflow.functions import Join
 from sagemaker.workflow.parameters import ParameterString
@@ -670,6 +670,26 @@ def test_step_inputs_as_expected_no_filter(
             "sm_processing_step_sklearn",
             False,
         ],
+        [
+            Equals,
+            [
+                TransformInput(
+                    data=f"s3://{DUMMY_BUCKET}/output-4",
+                )
+            ],
+            "sm_transform_step",
+            True,
+        ],
+        [
+            Equals,
+            [
+                TransformInput(
+                    data=f"s3://{DUMMY_BUCKET}/output-1",
+                )
+            ],
+            "sm_transform_step",
+            False,
+        ],
     ],
 )
 def test_step_inputs_as_expected_filter(
@@ -762,6 +782,20 @@ def test_step_inputs_as_expected_args_validation_neither() -> None:
             ],
             False,
         ],
+        [
+            Contains,
+            [
+                f"s3://{DUMMY_BUCKET}/transformer-output",
+            ],
+            True,
+        ],
+        [
+            Contains,
+            [
+                f"s3://{DUMMY_BUCKET}/transformer-output-nope",
+            ],
+            False,
+        ],
     ],
 )
 def test_step_outputs_as_expected_no_filter(
@@ -772,6 +806,7 @@ def test_step_outputs_as_expected_no_filter(
         rule=rule(),
     )
     result = step_outputs_validation.run(sagemaker_pipeline)
+    # assert result == "foo"
     assert result.success == success
 
 
@@ -837,6 +872,38 @@ def test_step_outputs_as_expected_filter(
 @pytest.mark.parametrize(
     "inputs_outputs_expected,success,raise_error",
     [
+        [
+            [
+                {
+                    "input": {
+                        "step_name": "sm_transform_step",
+                        "input_name": "transform",
+                    },
+                    "output": {
+                        "step_name": "sm_processing_step_spark",
+                        "output_name": "output-2",
+                    },
+                }
+            ],
+            True,
+            False,
+        ],
+        [
+            [
+                {
+                    "input": {
+                        "step_name": "sm_processing_step_sklearn",
+                        "input_name": "input-1",
+                    },
+                    "output": {
+                        "step_name": "sm_transform_step",
+                        "output_name": "transform",
+                    },
+                }
+            ],
+            False,
+            False,
+        ],
         [
             [
                 {

@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Union
 import boto3
 from botocore.exceptions import ClientError
 from sagemaker.estimator import Estimator
-from sagemaker.inputs import FileSystemInput, TrainingInput
+from sagemaker.inputs import FileSystemInput, TrainingInput, TransformInput
 from sagemaker.processing import NetworkConfig, ProcessingInput, ProcessingOutput
 from sagemaker.workflow.entities import PipelineVariable
 from sagemaker.workflow.parameters import Parameter
@@ -51,9 +51,10 @@ class PipelineParametersAsExpected(Validation):
 class StepKmsKeyIdAsExpected(Validation):
     """Validate KmsKeyId or output_kms_key in Step.
 
-    Supported only for ProcessingStep and TrainingStep (output_kms_key).
-    This validation is useful when you want to ensure that the KmsKeyId
-    or output_kms_key of a Pipeline Step is as expected.
+    Supported only for ProcessingStep, TransformStep and TrainingStep
+    (output_kms_key). This validation is useful when you want to ensure
+    that the KmsKeyId or output_kms_key of a Pipeline Step is as
+    expected.
     """
 
     def __init__(
@@ -65,7 +66,10 @@ class StepKmsKeyIdAsExpected(Validation):
             name="StepKmsKeyIdAsExpected",
             paths=[
                 f".steps[{self.step_filter} && step_type/value==Processing].kms_key",
-                f".steps[{self.step_filter} && step_type/value==Training].estimator.output_kms_key",
+                f".steps[{self.step_filter} && step_type/value==Transform].transformer."
+                f"output_kms_key",
+                f".steps[{self.step_filter} && step_type/value==Training].estimator."
+                f"output_kms_key",
             ],
             rule=rule,
         )
@@ -524,6 +528,8 @@ class StepTagsAsExpected(Validation):
             paths=[
                 f".steps[{self.step_filter} && step_type/value==Processing].processor.tags",
                 f".steps[{self.step_filter} && step_type/value==Training].estimator.tags",
+                f".steps[{self.step_filter} && step_type/value==Transform].transformer.tags",
+                f".steps[{self.step_filter} && step_type/value==Tuning].tuner.tags",
             ],
             rule=rule,
         )
@@ -556,10 +562,14 @@ class StepInputsAsExpected(Validation):
     def __init__(
         self,
         inputs_expected: List[
-            Union[Dict[str, Union[str, TrainingInput, FileSystemInput]], ProcessingInput]
+            Union[
+                Dict[str, Union[str, TrainingInput, FileSystemInput]],
+                ProcessingInput,
+                TransformInput,
+            ]
         ],
         rule: Rule,
-        step_type: Optional[Union["Training", "Processing"]] = None,  # noqa F821
+        step_type: Optional[Union["Training", "Processing", "Transform"]] = None,  # noqa F821
         step_name: Optional[str] = None,
     ) -> None:
         """Initialize StepTagsAsExpected validation.
@@ -580,8 +590,10 @@ class StepInputsAsExpected(Validation):
             raise ValueError("step_type and step_name cannot be specified together.")
         if not step_type and not step_name:
             raise ValueError("Either step_type or step_name must be specified.")
-        if step_type not in ("Training", "Processing") and not step_name:
-            raise ValueError(f"step_type must be 'Training' or 'Processing', not {step_type}.")
+        if step_type not in ("Training", "Processing", "Transform") and not step_name:
+            raise ValueError(
+                f"step_type must be 'Training' or 'Processing' or 'Transform', not {step_type}."
+            )
 
         self.step_filter: str = f"name=={step_name}" if step_name else ""
         self.step_type_filter: str = f"step_type/value=={step_type}" if step_type else ""
@@ -640,15 +652,21 @@ class StepInputsAsExpected(Validation):
         inputs_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
 
         if self.step_type_filter == "step_type/value==Processing":
-            # ProcessingStep has a list of ProcessingInput
+            # ProcessingStep/TransformStep has a list of ProcessingInput/TransformInput
             inputs_observed_formatted = [x.__dict__ for y in inputs_observed for x in y]
             inputs_expected_formatted = [x.__dict__ for x in self.inputs_expected]
+        elif self.step_type_filter == "step_type/value==Transform":
+            inputs_observed_formatted = [x.__dict__ for x in inputs_observed]
+            inputs_expected_formatted = [x.__dict__ for x in self.inputs_expected]
         elif self.step_type_filter == "step_type/value==Training":
-            # TrainingStep has a dict with values potentially being TrainingInput or FileSystemInput
+            # TrainingStep has a dict with values potentially being TrainingInput or
+            # FileSystemInput
             inputs_observed_formatted = StepInputsAsExpected.format_training_inputs(inputs_observed)
             inputs_expected_formatted = StepInputsAsExpected.format_training_inputs(
                 self.inputs_expected
             )
+        else:
+            raise ValueError("step_type must be 'Training' or 'Processing' or 'Transform'.")
         result = self.rule.run(inputs_observed_formatted, inputs_expected_formatted, self.name)
         return result
 
@@ -663,13 +681,13 @@ class StepOutputsAsExpected(Validation):
 
     def __init__(
         self,
-        outputs_expected: List[ProcessingOutput],
+        outputs_expected: Union[List[ProcessingOutput], str],
         rule: Rule,
         step_name: Optional[str] = None,
     ) -> None:
-        """Initialize StepTagsAsExpected validation.
+        """Initialize StepOutputsAsExpected validation.
 
-        :param outputs_expected: Expected Inputs
+        :param outputs_expected: Expected outputs
         :type outputs_expected: List[ProcessingOutput]
         :param rule: Rule to use for validation
         :type rule: Rule
@@ -685,10 +703,12 @@ class StepOutputsAsExpected(Validation):
             name="StepOutputsAsExpected",
             paths=[
                 f".steps[{self.step_filter} && step_type/value==Processing]].outputs",
+                f".steps[{self.step_filter} && step_type/value==Transform]].transformer."
+                f"output_path",
             ],
             rule=rule,
         )
-        self.outputs_expected: List[ProcessingOutput] = outputs_expected
+        self.outputs_expected: List[Union[ProcessingOutput, str]] = outputs_expected
 
     def run(
         self,
@@ -703,8 +723,16 @@ class StepOutputsAsExpected(Validation):
         """
 
         outputs_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
-        outputs_observed_formatted = [x.__dict__ for y in outputs_observed for x in y]
-        outputs_expected_formatted = [x.__dict__ for x in self.outputs_expected]
+        outputs_observed_formatted = []
+        for output in outputs_observed:
+            if isinstance(output, str):
+                outputs_observed_formatted.append(output)
+            else:
+                for item in output:
+                    outputs_observed_formatted.append(item.__dict__)
+        outputs_expected_formatted = [
+            x.__dict__ if not isinstance(x, str) else x for x in self.outputs_expected
+        ]
         result = self.rule.run(outputs_observed_formatted, outputs_expected_formatted, self.name)
         return result
 
@@ -715,7 +743,8 @@ class StepOutputsMatchInputsAsExpected(Validation):
     def __init__(self, inputs_outputs_expected: List[Dict[str, Dict[str, str]]]) -> None:
         """Initialize StepTagsAsExpected validation.
 
-        :param inputs_outputs_expected: Expected Input and Output per step name
+        :param inputs_outputs_expected: Expected Input and Output per step name.
+        Use 'transform' for the input or output of the TransformStep.
         :type inputs_outputs_expected: Dict[str, Dict[str, str]]
         :return: None
         :rtype: None
@@ -740,22 +769,26 @@ class StepOutputsMatchInputsAsExpected(Validation):
         :return: ProcessingStep
         :rtype: ProcessingStep
         """
-        supported_step_types = ("Processing", "Training", "Tuning")
+        supported_step_types = ("Processing", "Training", "Tuning", "Transform")
         for step in sagemaker_pipeline.steps:
-            if step.name == step_name and step.step_type.value in supported_step_types:
+            if step.step_type.value == "Transform" and step_name == "transform":
                 return step
-        raise ValueError(f"Processing, Training or Tuning Step {step_name} not found in Pipeline.")
+            elif step.name == step_name and step.step_type.value in supported_step_types:
+                return step
+        raise ValueError(
+            f"Processing, Training, Transform or Tuning Step {step_name} not found in Pipeline."
+        )
 
     @staticmethod
     def get_input_output_by_name(
-        step: Union["ProcessingStep", "TrainingStep", "TuningStep"],  # noqa F821
+        step: Union["ProcessingStep", "TrainingStep", "TuningStep", "TransformStep"],  # noqa F821
         name: str,
         kind: str,  # noqa F821
     ) -> str:
         """Get ProcessingInput or ProcessingOutput by name.
 
         :param step: step to run validation on
-        :type step: Union[ProcessingStep, TrainingStep, TuningStep]
+        :type step: Union[ProcessingStep, TrainingStep, TuningStep, TransformStep]
         :param name: Name of Input or Output
         :type name: str
         :param kind: Kind of Input or Output, must be one of "input" or "output"
@@ -773,6 +806,8 @@ class StepOutputsMatchInputsAsExpected(Validation):
                     return input.config["DataSource"]["S3DataSource"]["S3Uri"]
                 else:
                     raise ValueError(f"Input {name} is not of type TrainingInput.")
+            elif step_type == "Transform":
+                return step.inputs.data
             else:
                 # If ProcessingStep
                 for input in step.inputs:
@@ -781,9 +816,12 @@ class StepOutputsMatchInputsAsExpected(Validation):
                 raise ValueError(f"Input {name} not found in ProcessingStep.")
 
         elif kind == "output":
-            for output in step.outputs:
-                if output.output_name == name:
-                    return output.destination
+            if step_type == "Processing":
+                for output in step.outputs:
+                    if output.output_name == name:
+                        return output.destination
+            elif step_type == "Transform":
+                return step.transformer.output_path
         else:
             raise ValueError(f"Kind {kind} not supported. Must be one of 'input' or 'output'.")
 
