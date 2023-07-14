@@ -665,8 +665,6 @@ class StepInputsAsExpected(Validation):
             inputs_expected_formatted = StepInputsAsExpected.format_training_inputs(
                 self.inputs_expected
             )
-        else:
-            raise ValueError("step_type must be 'Training' or 'Processing' or 'Transform'.")
         result = self.rule.run(inputs_observed_formatted, inputs_expected_formatted, self.name)
         return result
 
@@ -822,8 +820,6 @@ class StepOutputsMatchInputsAsExpected(Validation):
                         return output.destination
             elif step_type == "Transform":
                 return step.transformer.output_path
-        else:
-            raise ValueError(f"Kind {kind} not supported. Must be one of 'input' or 'output'.")
 
     def run(
         self,

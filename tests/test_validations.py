@@ -1048,6 +1048,22 @@ def test_step_outputs_as_expected_filter(
             False,
             True,
         ],
+        [
+            [
+                {
+                    "input": {
+                        "step_name": "sm_transform_step",
+                        "input_name": "transform",
+                    },
+                    "output": {
+                        "step_name": "sm_processing_step_spark",
+                        "output_name": "output-2",
+                    },
+                }
+            ],
+            True,
+            False,
+        ],
     ],
 )
 def test_step_outputs_match_inputs_as_expected(
