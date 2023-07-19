@@ -24,6 +24,7 @@ jobs:
         uses: pre-commit/action@v3.0.0
         with:
           extra_args: --show-diff-on-failure --all-files --color=always
+      - uses: actions/checkout@v3
       - name: Commit changed files
         if: always() && steps.pre_commit.outcome == 'failure'
         uses: ./.github/workflows/push-changes.yml
