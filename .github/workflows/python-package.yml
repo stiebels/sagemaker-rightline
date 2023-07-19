@@ -10,7 +10,7 @@ on:
     branches: [ "main" ]
 
 env:
-  DEFAULT_PYTHON_VERSION: 3.10
+  DEFAULT_PYTHON_VERSION: "3.10"
   PROJECT_NAME: sagemaker_rightline
 
 jobs:

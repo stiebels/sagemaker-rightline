@@ -5,7 +5,7 @@ on:
     types: [published]
 
 env:
-  DEFAULT_PYTHON_VERSION: 3.10
+  DEFAULT_PYTHON_VERSION: "3.10"
 
 jobs:
   Build:
