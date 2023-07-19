@@ -29,9 +29,7 @@ jobs:
         run: |
           git config user.email gh-actions
           git config user.name gh-actions
-#          git config pull.rebase false
           git add .
-#          git pull origin HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}} --allow-unrelated-histories
           git commit -m "Committed changes by pre-commit"
           git push origin HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
 
