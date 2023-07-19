@@ -90,12 +90,14 @@ jobs:
           fi
           echo "update_class_diagram=${update_class_diagram}" >> "$GITHUB_OUTPUT"
           echo $update_class_diagram
-      - uses: stefanzweifel/git-auto-commit-action@v4
-        if: ${{ steps.build_class_diagram.outputs.update_class_diagram }} == "true"
-        name: Commit Class Diagram
-        with:
-          file_pattern: ${{ env.CLASS_DIAGRAM_PATH }}
-          commit_message: Update class diagram.
+      - name: Commit changed files
+        if: steps.build_class_diagram.outputs.update_class_diagram == 'true'
+        run: |
+          git config user.email gh-actions
+          git config user.name gh-actions
+          git add .
+          git commit -m "Committed updated class diagram"
+          git push
 
   Ready:
     name: Ready
