@@ -17,6 +17,8 @@ jobs:
   pre_commit_check:
     name: Pre-Commit
     runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.pre_commit.outcome }}
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -24,41 +26,17 @@ jobs:
         with:
           python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
       - name: Pre-Commit
+        id: pre_commit
         uses: pre-commit/action@v3.0.0
         with:
           extra_args: --show-diff-on-failure --all-files --color=always
-
-  check_test_build:
-    needs: [pre_commit_check]
-    name: Build-Test
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Update Pip
-      run: pip install -U pip
-    - name: Build with Dependencies
-      run: pip install -e .[dev]
-    - name: Test with pytest
-      run: |
-        pytest -vs ./tests/
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v3
-    - name: Build Package
-      run: python3 -m build
 
   generate_docs:
     needs: [pre_commit_check]
     name: Generate-Docs
     runs-on: ubuntu-latest
+    outputs:
+      update_class_diagram: ${{ steps.build_class_diagram.output.update_class_diagram }}
     env:
       CLASS_DIAGRAM_PATH: docs/class_diagram.puml
     steps:
@@ -93,24 +71,53 @@ jobs:
               update_class_diagram="true"
           fi
           echo "update_class_diagram=${update_class_diagram}" >> "$GITHUB_OUTPUT"
+
+  commit_changed_files:
+    needs: [generate_docs, pre_commit_check]
+    name: Commit-Changed-Files
+    runs-on: ubuntu-latest
+    steps:
       - name: Commit changed files
-        if: steps.pre_commit_check.outcome == 'failure' || steps.build_class_diagram.outputs.update_class_diagram == 'true'
+        env:
+          PRECOMMIT_RESULT: ${{ needs.jobs.pre_commit_check.outputs.result }}
+          UPDATE_CLASS_DIAGRAM: ${{ needs.jobs.generate_docs.outputs.update_class_diagram }}
+        if: env.PRECOMMIT_RESULT == 'failure' || env.UPDATE_CLASS_DIAGRAM == 'true'
         run: |
           git config user.email gh-actions
           git config user.name gh-actions
           git add .
-          git commit -m "Commited updated files"
+          git commit -m "Committed updated files"
           git push
-#      - uses: stefanzweifel/git-auto-commit-action@v4
-#        if: ${{ steps.build_class_diagram.outputs.update_class_diagram }} = "true"
-#        name: Commit Class Diagram
-#        with:
-#          file_pattern: ${{ env.CLASS_DIAGRAM_PATH }}
-#          commit_message: Update class diagram.
+
+  check_test_build:
+    needs: [commit_changed_files]
+    name: Build-Test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Update Pip
+      run: pip install -U pip
+    - name: Build with Dependencies
+      run: pip install -e .[dev]
+    - name: Test with pytest
+      run: |
+        pytest -vs ./tests/
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+    - name: Build Package
+      run: python3 -m build
 
   Ready:
     name: Ready
-    needs: [check_test_build, generate_docs]
+    needs: [check_test_build]
     uses: ./.github/workflows/ready.yml
     with:
       message: "Pre-Commit, test and build have been successful."
