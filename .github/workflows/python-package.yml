@@ -73,7 +73,7 @@ jobs:
         run: |
           py2puml ${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }} > $${{ env.generate-docs.CLASS_DIAGRAM_PATH }}
           class_diagram_diff=if [[ $(diff foo.txt bar.txt) ]]; then echo "true"; else echo "false"; fi
-          if [[ $(class_diagram_diff) = "true" ]]; then mv docs/class_diagram_staging.puml docs/class_diagram.puml else rm docs/class_diagram_staging.puml fi
+          if [[ $(class_diagram_diff) = "true" ]]; then mv docs/class_diagram_staging.puml docs/class_diagram.puml; else rm docs/class_diagram_staging.puml; fi
       - uses: stefanzweifel/git-auto-commit-action@v4
         if: ${{ steps.build_class_diagram.outputs.class_diagram_diff }}
         name: Commit Class Diagram
