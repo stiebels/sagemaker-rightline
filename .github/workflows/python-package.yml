@@ -51,10 +51,9 @@ jobs:
       run: |
         project_name=$(echo ${{ github.event.repository.name }} | tr '-' '_')
         py2puml $project_name $project_name > docs/class_diagram_staging.puml
-        class_diagram_diff=$(diff foo.txt bar.txt)
-        if [[ $(class_diagram_diff) ]]; then mv docs/class_diagram_staging.puml docs/class_diagram.puml else rm docs/class_diagram_staging.puml fi
+#        class_diagram_diff=$(diff foo.txt bar.txt)
+#        if [[ $(class_diagram_diff) ]]; then mv docs/class_diagram_staging.puml docs/class_diagram.puml else rm docs/class_diagram_staging.puml fi
     - uses: stefanzweifel/git-auto-commit-action@v4
-      if: $class_diagram_diff
       with:
         file_pattern: docs/class_diagram.puml
         commit_message: Update class diagram.
