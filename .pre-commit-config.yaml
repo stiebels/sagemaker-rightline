@@ -1,3 +1,4 @@
+exclude: \.puml$
 fail_fast: false
 
 repos:

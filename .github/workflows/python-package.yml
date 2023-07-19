@@ -1,35 +1,38 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
 name: Python package
-
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
+env:
+  DEFAULT_PYTHON_VERSION: "3.10"
+  PROJECT_NAME: sagemaker_rightline
+
 jobs:
-  Pre-Commit-Check:
+  pre_commit_check:
+    name: Pre-Commit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
       - name: Pre-Commit
+        id: pre_commit
         uses: pre-commit/action@v3.0.0
+        with:
+          extra_args: --show-diff-on-failure --all-files --color=always
 
-  Check-Test-Build:
-    needs: [Pre-Commit-Check]
+  check_test_build:
+    needs: [pre_commit_check]
     name: Build-Test
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
-
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
@@ -48,9 +51,57 @@ jobs:
     - name: Build Package
       run: python3 -m build
 
+  generate_docs:
+    needs: [pre_commit_check]
+    name: Generate-Docs
+    runs-on: ubuntu-latest
+    env:
+      CLASS_DIAGRAM_PATH: docs/class_diagram.puml
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
+      - name: Update Pip
+        run: pip install -U pip
+      - name: Install required dependencies
+        run: pip install -e .[docs]
+      - name: Build Class Diagram
+        id: build_class_diagram
+        run: |
+          if test -f ${{ env.CLASS_DIAGRAM_PATH }}; then
+              py2puml ${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }} > ${{ env.CLASS_DIAGRAM_PATH }}_staging
+              update_class_diagram=$(
+                if [[ $(diff ${{ env.CLASS_DIAGRAM_PATH }}_staging ${{ env.CLASS_DIAGRAM_PATH }}) ]]; then
+                  echo "true"
+                else
+                  echo "false"
+                fi
+              )
+              if [ $update_class_diagram = "true" ]; then
+                mv ${{ env.CLASS_DIAGRAM_PATH }}_staging ${{ env.CLASS_DIAGRAM_PATH }}
+              else
+                rm ${{ env.CLASS_DIAGRAM_PATH }}_staging
+              fi
+          else
+              py2puml ${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }} > ${{ env.CLASS_DIAGRAM_PATH }}
+              update_class_diagram="true"
+          fi
+          echo "update_class_diagram=${update_class_diagram}" >> "$GITHUB_OUTPUT"
+          echo $update_class_diagram
+      - name: Commit changed files
+        if: steps.build_class_diagram.outputs.update_class_diagram == 'true'
+        run: |
+          git config user.email gh-actions
+          git config user.name gh-actions
+          git add .
+          git commit -m "Committed updated class diagram"
+          git push
+
   Ready:
     name: Ready
-    needs: [Check-Test-Build]
+    needs: [check_test_build, generate_docs]
     uses: ./.github/workflows/ready.yml
     with:
       message: "Pre-Commit, test and build have been successful."

@@ -1,7 +1,7 @@
-![Test-Build-Workflow](https://github.com/stiebels/sagemaker-rightline/actions/workflows/python-package.yml/badge.svg)
-[![codecov](https://codecov.io/gh/stiebels/sagemaker-rightline/branch/main/graph/badge.svg?token=7TCW0GP1NV)](https://codecov.io/gh/stiebels/sagemaker-rightline)
+![Test&Build](https://github.com/stiebels/sagemaker-rightline/actions/workflows/python-package.yml/badge.svg)
+[![CodeCov](https://codecov.io/gh/stiebels/sagemaker-rightline/branch/main/graph/badge.svg?token=7TCW0GP1NV)](https://codecov.io/gh/stiebels/sagemaker-rightline)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/stiebels/sagemaker-rightline/issues)
-[![Documentation Status](https://readthedocs.org/projects/sagemaker-rightline/badge/?version=latest)](https://sagemaker-rightline.readthedocs.io/en/latest/?badge=latest)
+[![Documentation](https://readthedocs.org/projects/sagemaker-rightline/badge/?version=latest)](https://sagemaker-rightline.readthedocs.io/en/latest/?badge=latest)
 
 # sagemaker-rightline
 
@@ -193,3 +193,5 @@ This will trigger the `publish.yml` workflow, creating a new release with the ve
 
 ## Contributing
 Contributions welcome! We'll add a guide shortly.
+To get an overview of the structure of the project, have a look at the [class diagram](./docs/class_diagram.puml), which is auto-generated at build time.
+Note that you will need to use a PlantUML viewer to render the diagram. Corresponding VSCode or IntelliJ plugins or online viewers (e.g. https://plantuml.com/ ) are available.
