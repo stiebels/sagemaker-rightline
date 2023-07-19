@@ -29,6 +29,7 @@ jobs:
         run: |
           git config user.email gh-actions
           git config user.name gh-actions
+          git config pull.rebase false
           git add .
           git pull origin HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
           git commit -m "Committed changes by pre-commit"
@@ -103,6 +104,7 @@ jobs:
         run: |
           git config user.email gh-actions
           git config user.name gh-actions
+          git config pull.rebase false
           git add ${{ env.CLASS_DIAGRAM_PATH }}
           git pull origin HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
           git commit -m "Committed changes to class diagram"
