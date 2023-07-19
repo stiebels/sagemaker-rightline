@@ -53,6 +53,7 @@ jobs:
 
   generate_docs:
     needs: [pre_commit_check]
+    if: ${{ github.ref != 'refs/heads/main' }}
     name: Generate-Docs
     runs-on: ubuntu-latest
     env:
@@ -89,7 +90,6 @@ jobs:
               update_class_diagram="true"
           fi
           echo "update_class_diagram=${update_class_diagram}" >> "$GITHUB_OUTPUT"
-          echo $update_class_diagram
       - name: Commit changed files
         if: steps.build_class_diagram.outputs.update_class_diagram == 'true'
         run: |
