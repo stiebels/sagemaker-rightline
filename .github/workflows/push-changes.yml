@@ -9,10 +9,11 @@ on:
         type: 'string'
 
 jobs:
-  ready:
+  push_changes:
     runs-on: ubuntu-latest
     steps:
-      - run: |
+      - name: push_changes
+        run: |
           git config user.email gh-actions
           git config user.name gh-actions
           git config pull.rebase false
