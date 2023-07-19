@@ -73,8 +73,18 @@ jobs:
         run: |
           if test -f ${{ env.CLASS_DIAGRAM_PATH }}; then
               py2puml ${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }} > ${{ env.CLASS_DIAGRAM_PATH }}_staging
-              update_class_diagram=$(if [[ $(diff ${{ env.CLASS_DIAGRAM_PATH }}_staging ${{ env.CLASS_DIAGRAM_PATH }}) ]]; then echo "true"; else echo "false"; fi)
-              if [ $update_class_diagram = "true" ]; then mv ${{ env.CLASS_DIAGRAM_PATH }}_staging ${{ env.CLASS_DIAGRAM_PATH }}; else rm ${{ env.CLASS_DIAGRAM_PATH }}_staging; fi
+              update_class_diagram=$(
+                if [[ $(diff ${{ env.CLASS_DIAGRAM_PATH }}_staging ${{ env.CLASS_DIAGRAM_PATH }}) ]]; then
+                  echo "true"
+                else
+                  echo "false"
+                fi
+              )
+              if [ $update_class_diagram = "true" ]; then
+                mv ${{ env.CLASS_DIAGRAM_PATH }}_staging ${{ env.CLASS_DIAGRAM_PATH }}
+              else
+                rm ${{ env.CLASS_DIAGRAM_PATH }}_staging
+              fi
           else
               py2puml ${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }} > ${{ env.CLASS_DIAGRAM_PATH }}
               update_class_diagram="true"
