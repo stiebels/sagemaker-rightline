@@ -42,6 +42,7 @@ dev = [
     "pyproject-flake8",
     "jupyter",
     "build",
+    "py2puml",
 ]
 
 [project.urls]
