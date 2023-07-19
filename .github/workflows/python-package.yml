@@ -14,7 +14,7 @@ env:
   PROJECT_NAME: sagemaker_rightline
 
 jobs:
-  Pre-Commit-Check:
+  pre_commit_check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -25,8 +25,8 @@ jobs:
       - name: Pre-Commit
         uses: pre-commit/action@v3.0.0
 
-  Check-Test-Build:
-    needs: [Pre-Commit-Check]
+  check_test_build:
+    needs: [pre_commit_check]
     name: Build-Test
     runs-on: ubuntu-latest
     strategy:
@@ -52,9 +52,8 @@ jobs:
     - name: Build Package
       run: python3 -m build
 
-  Generate-Docs:
-    needs: [Pre-Commit-Check]
-    id: generate_docs
+  generate_docs:
+    needs: [pre_commit_check]
     name: Generate-Docs
     runs-on: ubuntu-latest
     env:
@@ -84,7 +83,7 @@ jobs:
 
   Ready:
     name: Ready
-    needs: [Check-Test-Build, Generate-Docs]
+    needs: [check_test_build, generate_docs]
     uses: ./.github/workflows/ready.yml
     with:
       message: "Pre-Commit, test and build have been successful."
