@@ -12,6 +12,7 @@ jobs:
   push_changes:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: push_changes
         run: |
           git config user.email gh-actions
