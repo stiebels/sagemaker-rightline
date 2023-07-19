@@ -80,7 +80,7 @@ jobs:
               update_class_diagram="true"
           fi
       - uses: stefanzweifel/git-auto-commit-action@v4
-        if: ${{ steps.build_class_diagram.outputs.class_diagram_diff }}
+        if: ${{ steps.build_class_diagram.outputs.update_class_diagram }}
         name: Commit Class Diagram
         with:
           file_pattern: ${{ env.generate_docs.CLASS_DIAGRAM_PATH }}
