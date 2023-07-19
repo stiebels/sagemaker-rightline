@@ -29,6 +29,7 @@ jobs:
         run: |
           git config user.email gh-actions
           git config user.name gh-actions
+          git fetch --all
           git add .
           git commit -m "Committed changes by pre-commit"
           git push origin add-class-diagram
