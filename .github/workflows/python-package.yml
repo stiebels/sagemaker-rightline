@@ -90,8 +90,9 @@ jobs:
               py2puml ${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }} > ${{ env.CLASS_DIAGRAM_PATH }}
               update_class_diagram="true"
           fi
+          echo "update_class_diagram=${update_class_diagram}" >> "$GITHUB_OUTPUT"
       - uses: stefanzweifel/git-auto-commit-action@v4
-        if: $update_class_diagram = "true"
+        if: ${{ steps.build_class_diagram.outputs.update_class_diagram }} = "true"
         name: Commit Class Diagram
         with:
           file_pattern: ${{ env.generate_docs.CLASS_DIAGRAM_PATH }}
