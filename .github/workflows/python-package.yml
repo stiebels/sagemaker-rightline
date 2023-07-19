@@ -71,8 +71,6 @@ jobs:
         run: pip install -e .[docs]
       - name: Build Class Diagram
         id: build_class_diagram
-        outputs:
-          update_class_diagram: ${{ steps.build_class_diagram.outputs.update_class_diagram }}
         run: |
           if test -f ${{ env.CLASS_DIAGRAM_PATH }}; then
               py2puml ${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }} > ${{ env.CLASS_DIAGRAM_PATH }}_staging
@@ -92,9 +90,8 @@ jobs:
               py2puml ${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }} > ${{ env.CLASS_DIAGRAM_PATH }}
               update_class_diagram="true"
           fi
-          echo "update_class_diagram=${{ steps.build_class_diagram.outputs.update_class_diagram }}" >> $GITHUB_OUTPUT
       - uses: stefanzweifel/git-auto-commit-action@v4
-        if: ${{ steps.build_class_diagram.outputs.update_class_diagram }} = "true"
+        if: $update_class_diagram = "true"
         name: Commit Class Diagram
         with:
           file_pattern: ${{ env.generate_docs.CLASS_DIAGRAM_PATH }}
