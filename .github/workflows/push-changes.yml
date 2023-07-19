@@ -1,0 +1,22 @@
+name: Ready
+
+on:
+  workflow_call:
+    inputs:
+      add_target:
+        description: What should follow after "git add", e.g. git add -u?
+        required: true
+        type: 'string'
+
+jobs:
+  ready:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          git config user.email gh-actions
+          git config user.name gh-actions
+          git config pull.rebase false
+          git add ${{ inputs.add_target }}
+          git pull origin HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+          git commit -m "Committed changes to class diagram"
+          git push origin HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
