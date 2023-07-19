@@ -73,7 +73,6 @@ jobs:
           echo "update_class_diagram=${update_class_diagram}" >> "$GITHUB_OUTPUT"
 
   commit_changed_files:
-    if: env.PRECOMMIT_RESULT == 'failure' || env.UPDATE_CLASS_DIAGRAM == 'true'
     needs: [generate_docs, pre_commit_check]
     name: Commit-Changed-Files
     runs-on: ubuntu-latest
@@ -82,6 +81,7 @@ jobs:
         env:
           PRECOMMIT_RESULT: ${{ needs.jobs.pre_commit_check.outputs.result }}
           UPDATE_CLASS_DIAGRAM: ${{ needs.jobs.generate_docs.outputs.update_class_diagram }}
+        if: env.PRECOMMIT_RESULT == 'failure' || env.UPDATE_CLASS_DIAGRAM == 'true'
         run: |
           git config user.email gh-actions
           git config user.name gh-actions
