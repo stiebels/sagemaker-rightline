@@ -42,7 +42,6 @@ dev = [
     "pyproject-flake8",
     "jupyter",
     "build",
-    "py2puml",
 ]
 docs = [
     "py2puml",

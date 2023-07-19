@@ -95,7 +95,7 @@ jobs:
         if: ${{ steps.build_class_diagram.outputs.update_class_diagram }} = "true"
         name: Commit Class Diagram
         with:
-          file_pattern: ${{ env.generate_docs.CLASS_DIAGRAM_PATH }}
+          file_pattern: ${{ env.CLASS_DIAGRAM_PATH }}
           commit_message: Update class diagram.
 
   Ready:
