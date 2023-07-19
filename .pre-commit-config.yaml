@@ -1,4 +1,4 @@
-exclude_types: [puml]
+exclude: \.puml$
 fail_fast: false
 
 repos:
