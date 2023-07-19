@@ -24,12 +24,16 @@ jobs:
         uses: pre-commit/action@v3.0.0
         with:
           extra_args: --show-diff-on-failure --all-files --color=always
-      - uses: actions/checkout@v3
       - name: Commit changed files
         if: always() && steps.pre_commit.outcome == 'failure'
-        uses: ./.github/workflows/push-changes.yml
-        with:
-          add_target: "."
+        run: |
+          git config user.email gh-actions
+          git config user.name gh-actions
+          git config pull.rebase false
+          git add .
+          git pull origin HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+          git commit -m "Committed changes by pre-commit"
+          git push origin HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
 
   check_test_build:
     needs: [pre_commit_check]
@@ -97,9 +101,14 @@ jobs:
           echo "update_class_diagram=${update_class_diagram}" >> "$GITHUB_OUTPUT"
       - name: Commit changed files
         if: steps.build_class_diagram.outputs.update_class_diagram == 'true'
-        uses: ./.github/workflows/push-changes.yml
-        with:
-          add_target: ${{ env.CLASS_DIAGRAM_PATH }}
+        run: |
+          git config user.email gh-actions
+          git config user.name gh-actions
+          git config pull.rebase false
+          git add ${{ env.CLASS_DIAGRAM_PATH }}
+          git pull origin HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+          git commit -m "Committed changes to class diagram"
+          git push origin HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
 
   Ready:
     name: Ready
