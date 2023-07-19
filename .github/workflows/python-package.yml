@@ -89,6 +89,7 @@ jobs:
               update_class_diagram="true"
           fi
           echo "update_class_diagram=${update_class_diagram}" >> "$GITHUB_OUTPUT"
+          echo $GITHUB_OUTPUT
       - uses: stefanzweifel/git-auto-commit-action@v4
         if: ${{ steps.build_class_diagram.outputs.update_class_diagram }} == "true"
         name: Commit Class Diagram
