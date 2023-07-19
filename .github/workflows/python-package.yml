@@ -53,6 +53,7 @@ jobs:
 
   generate_docs:
     needs: [pre_commit_check]
+    if: ${{ github.ref != 'refs/heads/main' }}
     name: Generate-Docs
     runs-on: ubuntu-latest
     env:
