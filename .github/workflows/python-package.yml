@@ -102,9 +102,10 @@ jobs:
         run: |
           git config user.email gh-actions
           git config user.name gh-actions
+          git checkout ${{ github.ref_name }}
           git add ${{ env.CLASS_DIAGRAM_PATH }}
           git commit -m "Committed changes to class diagram"
-          git push origin HEAD:${{ github.ref_name }}
+          git push
 
   Ready:
     name: Ready
