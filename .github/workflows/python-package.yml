@@ -67,7 +67,7 @@ jobs:
           python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
       - name: Update Pip
         run: pip install -U pip
-      - name: Build with Dependencies
+      - name: Install required dependencies
         run: pip install -e .[docs]
       - name: Build Class Diagram
         id: build_class_diagram
