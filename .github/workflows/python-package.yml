@@ -67,7 +67,7 @@ jobs:
       - name: Update Pip
         run: pip install -U pip
       - name: Build with Dependencies
-        run: pip install -e .[dev]
+        run: pip install -e .[docs]
       - name: Build Class Diagram
         id: build_class_diagram
         run: |
