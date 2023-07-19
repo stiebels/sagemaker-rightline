@@ -31,7 +31,7 @@ jobs:
           git config user.name gh-actions
           git add .
           git commit -m "Committed changes by pre-commit"
-          git push origin ${{ github.ref_name }}
+          git push origin ${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
 
   check_test_build:
     needs: [pre_commit_check]
@@ -104,7 +104,7 @@ jobs:
           git config user.name gh-actions
           git add ${{ env.CLASS_DIAGRAM_PATH }}
           git commit -m "Committed changes to class diagram"
-          git push origin ${{ github.ref_name }}
+          git push origin ${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
 
   Ready:
     name: Ready
