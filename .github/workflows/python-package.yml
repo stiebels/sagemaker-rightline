@@ -21,7 +21,6 @@ jobs:
           python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
       - name: Pre-Commit
         id: pre_commit
-        uses: ubuntu-latest
         run: pre-commit run --all-files --show-diff-on-failure
       - name: Commit changed files
         if: steps.pre_commit.outcome == 'failure'
