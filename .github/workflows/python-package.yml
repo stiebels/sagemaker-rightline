@@ -9,6 +9,10 @@ on:
   pull_request:
     branches: [ "main" ]
 
+env:
+  DEFAULT_PYTHON_VERSION: 3.10
+  PROJECT_NAME: sagemaker_rightline
+
 jobs:
   Pre-Commit-Check:
     runs-on: ubuntu-latest
@@ -17,7 +21,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
       - name: Pre-Commit
         uses: pre-commit/action@v3.0.0
 
@@ -47,17 +51,31 @@ jobs:
       uses: codecov/codecov-action@v3
     - name: Build Package
       run: python3 -m build
-    - name: Build Class Diagram
-      run: |
-        project_name=$(echo ${{ github.event.repository.name }} | tr '-' '_')
-        py2puml $project_name $project_name > docs/class_diagram_staging.puml
-#        class_diagram_diff=$(diff foo.txt bar.txt)
-#        if [[ $(class_diagram_diff) ]]; then mv docs/class_diagram_staging.puml docs/class_diagram.puml else rm docs/class_diagram_staging.puml fi
-    - uses: stefanzweifel/git-auto-commit-action@v4
-      with:
-        file_pattern: docs/class_diagram.puml
-        commit_message: Update class diagram.
 
+  Generate-Docs:
+    needs: [Pre-Commit-Check]
+    name: Generate-Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
+      - name: Update Pip
+        run: pip install -U pip
+      - name: Build with Dependencies
+        run: pip install -e .[dev]
+      - name: Build Class Diagram
+        run: |
+          py2puml ${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }} > docs/class_diagram_staging.puml
+          #        class_diagram_diff=$(diff foo.txt bar.txt)
+          #        if [[ $(class_diagram_diff) ]]; then mv docs/class_diagram_staging.puml docs/class_diagram.puml else rm docs/class_diagram_staging.puml fi
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        name: Commit Class Diagram
+        with:
+          file_pattern: docs/class_diagram.puml
+          commit_message: Update class diagram.
 
   Ready:
     name: Ready
