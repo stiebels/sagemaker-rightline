@@ -25,6 +25,8 @@ jobs:
           python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
       - name: Pre-Commit
         uses: pre-commit/action@v3.0.0
+        with:
+          extra_args: --show-diff-on-failure --all-files --color=always
 
   check_test_build:
     needs: [pre_commit_check]
@@ -91,12 +93,20 @@ jobs:
               update_class_diagram="true"
           fi
           echo "update_class_diagram=${update_class_diagram}" >> "$GITHUB_OUTPUT"
-      - uses: stefanzweifel/git-auto-commit-action@v4
-        if: ${{ steps.build_class_diagram.outputs.update_class_diagram }} = "true"
-        name: Commit Class Diagram
-        with:
-          file_pattern: ${{ env.CLASS_DIAGRAM_PATH }}
-          commit_message: Update class diagram.
+      - name: Commit changed files
+        if: steps.pre_commit_check.outcome == 'failure' || steps.build_class_diagram.outputs.update_class_diagram == 'true'
+        run: |
+          git config user.email gh-actions
+          git config user.name gh-actions
+          git add .
+          git commit -m "Commited updated files"
+          git push
+#      - uses: stefanzweifel/git-auto-commit-action@v4
+#        if: ${{ steps.build_class_diagram.outputs.update_class_diagram }} = "true"
+#        name: Commit Class Diagram
+#        with:
+#          file_pattern: ${{ env.CLASS_DIAGRAM_PATH }}
+#          commit_message: Update class diagram.
 
   Ready:
     name: Ready
