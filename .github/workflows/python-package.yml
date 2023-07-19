@@ -20,11 +20,12 @@ jobs:
         with:
           python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
       - name: Pre-Commit
+        id: pre_commit
         uses: pre-commit/action@v3.0.0
         with:
           extra_args: --show-diff-on-failure --all-files --color=always
       - name: Commit changed files
-        if: steps.pre_commit_check.outcome == 'failure'
+        if: steps.pre_commit.outcome == 'failure'
         run: |
           git config user.email gh-actions
           git config user.name gh-actions
