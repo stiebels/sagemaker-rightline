@@ -1,3 +1,4 @@
+exclude_types: [puml]
 fail_fast: false
 
 repos:
