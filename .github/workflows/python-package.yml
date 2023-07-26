@@ -57,7 +57,7 @@ jobs:
     name: Generate-Docs
     runs-on: ubuntu-latest
     steps:
-      - uses: stiebels/platuml-e2e-action@main
+      - uses: stiebels/plantuml-e2e-action@main
         with:
           py2puml_version: "latest"
           path: sagemaker_rightline
