@@ -56,42 +56,14 @@ jobs:
     if: ${{ github.ref != 'refs/heads/main' }}
     name: Generate-Docs
     runs-on: ubuntu-latest
-    env:
-      CLASS_DIAGRAM_PATH: docs/class_diagram.puml
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - uses: stiebels/platuml-e2e-action@main
         with:
-          python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
-      - name: Update Pip
-        run: pip install -U pip
-      - name: Install required dependencies
-        run: pip install -e .[docs]
-      - name: Build Class Diagram
-        id: build_class_diagram
-        run: |
-          if test -f ${{ env.CLASS_DIAGRAM_PATH }}; then
-              py2puml ${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }} > ${{ env.CLASS_DIAGRAM_PATH }}_staging
-              update_class_diagram=$(
-                if [[ $(diff ${{ env.CLASS_DIAGRAM_PATH }}_staging ${{ env.CLASS_DIAGRAM_PATH }}) ]]; then
-                  echo "true"
-                else
-                  echo "false"
-                fi
-              )
-              if [ $update_class_diagram = "true" ]; then
-                mv ${{ env.CLASS_DIAGRAM_PATH }}_staging ${{ env.CLASS_DIAGRAM_PATH }}
-              else
-                rm ${{ env.CLASS_DIAGRAM_PATH }}_staging
-              fi
-          else
-              py2puml ${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }} > ${{ env.CLASS_DIAGRAM_PATH }}
-              update_class_diagram="true"
-          fi
-          echo "update_class_diagram=${update_class_diagram}" >> "$GITHUB_OUTPUT"
+          py2puml_version: "latest"
+          path: sagemaker_rightline
+          module: sagemaker_rightline
+          output_dir: docs
       - name: Commit changed files
-        if: steps.build_class_diagram.outputs.update_class_diagram == 'true'
         run: |
           git config user.email gh-actions
           git config user.name gh-actions
