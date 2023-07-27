@@ -57,13 +57,14 @@ jobs:
     name: Generate-Docs
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - uses: stiebels/plantuml-e2e-action@main
         with:
-          py2puml_version: "latest"
-          path: sagemaker_rightline
-          module: sagemaker_rightline
-          output_dir: docs
-      - uses: actions/checkout@v3
+          puml_version: "0.7.2"
+          py2puml_version: "1.2023.7"
+          path: ${{ env.PROJECT_NAME }}
+          module: ${{ env.PROJECT_NAME }}
+          output_dir: "docs"
       - name: Commit changed files
         run: |
           git config user.email gh-actions
