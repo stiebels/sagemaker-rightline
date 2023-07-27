@@ -58,6 +58,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
       - uses: stiebels/plantuml-e2e-action@bugfix-doc-version
         name: Generate Class Diagram
         with:
