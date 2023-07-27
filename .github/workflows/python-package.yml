@@ -58,14 +58,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
       - name: Update Pip
         run: pip install -U pip
       - name: Build with Dependencies
-        run: pip install -e .[dev]
+        run: pip install -e .[docs]
       - uses: stiebels/plantuml-e2e-action@main
         name: Generate Class Diagram
         with:
