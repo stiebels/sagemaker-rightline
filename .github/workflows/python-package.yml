@@ -66,7 +66,7 @@ jobs:
         run: pip install -U pip
       - name: Build with Dependencies
         run: pip install -e .[docs]
-      - uses: stiebels/plantuml-e2e-action@main
+      - uses: stiebels/plantuml-e2e-action@bugfix-doc-version
         name: Generate Class Diagram
         with:
           puml_version: "1.2023.7"
