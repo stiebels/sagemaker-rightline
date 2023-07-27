@@ -63,6 +63,7 @@ jobs:
           path: sagemaker_rightline
           module: sagemaker_rightline
           output_dir: docs
+      - uses: actions/checkout@v3
       - name: Commit changed files
         run: |
           git config user.email gh-actions
