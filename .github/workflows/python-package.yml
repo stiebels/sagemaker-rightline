@@ -58,7 +58,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Build with Dependencies
+        run: pip install -e .[dev]
       - uses: stiebels/plantuml-e2e-action@main
+        name: Generate Class Diagram
         with:
           puml_version: "1.2023.7"
           py2puml_version: "0.7.2"
