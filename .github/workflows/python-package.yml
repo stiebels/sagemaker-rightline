@@ -72,6 +72,7 @@ jobs:
           git config user.name gh-actions
           git add .
           git commit -m "Committed updated class diagram"
+          git config pull.rebase false
           git pull origin ${{ github.event.pull_request.head.ref }}
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
 
