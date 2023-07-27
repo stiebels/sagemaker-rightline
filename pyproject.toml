@@ -43,9 +43,6 @@ dev = [
     "jupyter",
     "build",
 ]
-docs = [
-    "py2puml",
-]
 
 [project.urls]
 "Homepage" = "https://github.com/stiebels/sagemaker-rightline"

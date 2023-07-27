@@ -58,6 +58,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Update Pip
+        run: pip install -U pip
       - name: Build with Dependencies
         run: pip install -e .[dev]
       - uses: stiebels/plantuml-e2e-action@main
