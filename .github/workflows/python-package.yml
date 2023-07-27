@@ -66,13 +66,13 @@ jobs:
           path: ${{ env.PROJECT_NAME }}
           module: ${{ env.PROJECT_NAME }}
           output_dir: "docs"
+      - uses: actions/checkout@v3
       - name: Commit changed files
         run: |
           git config user.email gh-actions
           git config user.name gh-actions
           git add .
           git commit -m "Committed updated class diagram"
-          git push origin HEAD:${{ github.ref_name }}
 
   Ready:
     name: Ready
