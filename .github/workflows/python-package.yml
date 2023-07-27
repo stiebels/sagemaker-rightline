@@ -58,19 +58,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.DEFAULT_PYTHON_VERSION }}
-      - name: Update Pip
-        run: pip install -U pip
-      - name: Build with Dependencies
-        run: pip install -e .[docs]
       - uses: stiebels/plantuml-e2e-action@bugfix-doc-version
         name: Generate Class Diagram
         with:
           puml_version: "1.2023.7"
-          py2puml_version: "0.7.2"
+          pip_install_deps_cmd: "pip install -e .[docs]"
           path: ${{ env.PROJECT_NAME }}
           module: ${{ env.PROJECT_NAME }}
           output_dir: "docs"
