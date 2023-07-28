@@ -61,7 +61,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
-      - uses: stiebels/plantuml-e2e-action@bugfix-doc-version
+      - uses: stiebels/plantuml-e2e-action@v0.2.0
         name: Generate Class Diagram
         with:
           puml_version: "1.2023.7"
