@@ -71,11 +71,16 @@ jobs:
           output_dir: "docs"
       - name: Commit changed files
         run: |
-          git config user.email gh-actions
-          git config user.name gh-actions
-          git add .
-          git commit -m "Committed updated class diagram"
-          git push
+          if [[ `git status --porcelain` ]]; then
+            git config user.email gh-actions
+            git config user.name gh-actions
+            git add .
+            git commit -m "Committed updated class diagram"
+            git push
+          else
+            echo "No changes detected"
+          fi
+
 
   Ready:
     name: Ready
