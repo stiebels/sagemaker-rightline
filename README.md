@@ -193,5 +193,4 @@ This will trigger the `publish.yml` workflow, creating a new release with the ve
 
 ## Contributing
 Contributions welcome! We'll add a guide shortly.
-To get an overview of the structure of the project, have a look at the [class diagram](./docs/class_diagram.puml), which is auto-generated at build time.
-Note that you will need to use a PlantUML viewer to render the diagram. Corresponding VSCode or IntelliJ plugins or online viewers (e.g. https://plantuml.com/ ) are available.
+To get an overview of the structure of the project, have a look at the [class diagram](./docs/sagemaker_rightline.svg), which is auto-generated at build time together with the corresponding PUML file.
