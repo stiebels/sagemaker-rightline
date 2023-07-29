@@ -81,7 +81,6 @@ jobs:
             echo "No changes detected"
           fi
 
-
   Ready:
     name: Ready
     needs: [check_test_build, generate_docs]
