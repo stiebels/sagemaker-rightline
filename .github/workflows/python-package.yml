@@ -85,6 +85,10 @@ jobs:
   Ready:
     name: Ready
     needs: [check_test_build, generate_docs]
+    if: |
+      always() &&
+      needs.check_test_build.result == 'success' &&
+      (needs.generate_docs.result == 'success' || needs.generate_docs.result == 'skipped')
     uses: ./.github/workflows/ready.yml
     with:
-      message: "Pre-Commit, test and build have been successful."
+      message: "Pre-Commit, Build-Test, Generate-Docs have been successful."
