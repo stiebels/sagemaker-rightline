@@ -1,4 +1,4 @@
-exclude: \.puml$
+exclude: '\.puml$|\.svg$'
 fail_fast: false
 
 repos:
