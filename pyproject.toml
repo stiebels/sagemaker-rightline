@@ -44,7 +44,7 @@ dev = [
     "build",
 ]
 docs = [
-    "py2puml==0.8.0",
+    "py2puml==0.8.1",
 ]
 
 [project.urls]
