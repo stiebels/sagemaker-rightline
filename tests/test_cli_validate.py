@@ -1,0 +1,46 @@
+from argparse import Namespace
+from unittest.mock import patch
+
+import pytest
+
+from sagemaker_rightline.cli.validate import main
+from sagemaker_rightline.model import Report, ValidationResult
+
+
+@patch("sagemaker_rightline.cli.validate.parse_args")
+def test_main_positive(parse_args) -> None:
+    """Positive test for CLI validate command."""
+    parse_args.return_value = Namespace(configuration="tests/fixtures/cli_input.py")
+    with pytest.raises(SystemExit) as excinfo:
+        main()
+    assert excinfo.value.code == 0
+
+
+@patch("sagemaker_rightline.cli.validate.parse_args")
+def test_main_negative(parse_args) -> None:
+    """Negative test CLI validate command."""
+    parse_args.return_value = Namespace(configuration="tests/fixtures/cli_input.py")
+    with patch(
+        "sagemaker_rightline.model.Configuration.run",
+        return_value=Report(
+            results=[
+                ValidationResult(
+                    success=False,
+                    negative=False,
+                    message="test-message",
+                    subject="test-subject-1",
+                    validation_name="test-validation-name",
+                ),
+                ValidationResult(
+                    success=True,
+                    negative=False,
+                    message="test-message",
+                    subject="test-subject-2",
+                    validation_name="test-validation-name",
+                ),
+            ]
+        ).to_df(),
+    ):
+        with pytest.raises(SystemExit) as excinfo:
+            main()
+        assert excinfo.value.code == 1

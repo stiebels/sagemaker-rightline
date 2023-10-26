@@ -25,12 +25,13 @@ classifiers = [
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3 :: Only",
 ]
 
 dependencies = [
     "boto3>=1.26",
-    "pandas==2.0.3",
+    "pandas>=2.0.3",
     "sagemaker>=2.159",
 ]
 
@@ -55,6 +56,9 @@ docs = [
 # https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
 requires = ["setuptools>=43.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project.scripts]
+sagemaker-rightline = "sagemaker_rightline.cli.validate:main"
 
 [tool.setuptools.dynamic]
 version = {attr = "sagemaker_rightline.__version__"}

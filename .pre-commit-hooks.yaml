@@ -1,0 +1,9 @@
+-   id: sagemaker-rightline
+    name: Validates a SageMaker Pipeline.
+    description: This hook validates your SageMaker Pipeline based on a config.
+    entry: sagemaker-rightline
+    language: python
+    types: [file, python3]
+    pass_filenames: false
+    args:
+      - --configuration
