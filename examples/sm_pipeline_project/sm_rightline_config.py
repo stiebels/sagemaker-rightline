@@ -1,14 +1,11 @@
 import json
+import os
 import sys
-
 import boto3
-
-sys.path.append(".")
-
 from contextlib import contextmanager
 from typing import List
-
 from moto import mock_ecr
+
 from sagemaker.processing import NetworkConfig, ProcessingInput, ProcessingOutput
 from sagemaker.workflow.parameters import ParameterString
 
@@ -70,12 +67,12 @@ IMAGE_2_URI = (
 )
 DUMMY_BUCKET = "dummy-bucket"
 
-import os
 
 os.environ["AWS_DEFAULT_REGION"] = TEST_AWS_DEFAULT_REGION
 os.environ["AWS_SECRET_ACCESS_KEY"] = TEST_AWS_SECRET_ACCESS_KEY
 os.environ["AWS_ACCESS_KEY_ID"] = TEST_AWS_ACCESS_KEY_ID
 
+sys.path.append(".")
 from pipeline import get_sagemaker_pipeline
 
 
