@@ -2,7 +2,6 @@ import argparse
 import importlib.util
 import logging
 import os
-from os import path
 
 
 def parse_args() -> argparse.Namespace:
@@ -31,10 +30,12 @@ def parse_args() -> argparse.Namespace:
 def main():
     args = parse_args()
 
-    if args.working_dir:
-        os.chdir(args.working_dir)
+    try:
+        os.chdir(os.path.abspath(args.working_dir))
+    except AttributeError:
+        pass
 
-    abs_path = path.abspath(args.configuration)
+    abs_path = os.path.abspath(args.configuration)
     spec = importlib.util.spec_from_file_location("get_configuration", abs_path)
     sm_rightline_config_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(sm_rightline_config_module)
