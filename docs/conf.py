@@ -4,14 +4,9 @@ from __future__ import division, print_function, unicode_literals
 
 from datetime import datetime
 
-from recommonmark.parser import CommonMarkParser
-
 extensions = ["sphinx.ext.intersphinx"]
 templates_path = ["templates", "_templates", ".templates"]
-source_suffix = [".rst", ".md"]
-source_parsers = {
-    ".md": CommonMarkParser,
-}
+source_suffix = [".rst"]
 master_doc = "index"
 project = "sagemaker-rightline"
 copyright = str(datetime.now().year)
