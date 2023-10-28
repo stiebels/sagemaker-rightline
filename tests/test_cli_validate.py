@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from sagemaker_rightline.cli.validate import main
+from sagemaker_rightline.cli.validate import main, parse_args
 from sagemaker_rightline.model import Report, ValidationResult
 
 
@@ -66,3 +66,10 @@ def test_main_negative(parse_args) -> None:
         with pytest.raises(SystemExit) as excinfo:
             main()
         assert excinfo.value.code == 1
+
+
+def test_parse_args_fail_required() -> None:
+    # Fail with Systemexit if required arguments are not provided.
+    with pytest.raises(SystemExit) as excinfo:
+        parse_args()
+    assert excinfo.value.code == 2
