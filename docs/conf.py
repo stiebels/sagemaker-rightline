@@ -4,7 +4,8 @@ from __future__ import division, print_function, unicode_literals
 
 from datetime import datetime
 
-extensions = ["sphinx.ext.autodoc"]
+extensions = ["sphinx.ext.autodoc", "autoapi.extension"]
+autoapi_dirs = ["sagemaker_rightline"]
 templates_path = ["templates", "_templates", ".templates"]
 source_suffix = [".rst"]
 master_doc = "index"
