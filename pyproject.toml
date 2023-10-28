@@ -1,6 +1,6 @@
 [project]
 name = "sagemaker-rightline"
-requires-python = ">=3.8"
+requires-python = ">3.7,<3.13"
 dynamic = ["version"]
 description = "Python package to easily validate properties of a SageMaker Pipeline."
 authors = [
@@ -11,11 +11,7 @@ license = {file = "LICENSE"}
 readme = "README.md"
 keywords = ["sagemaker", "pipeline", "validation"]
 classifiers = [
-  # How mature is this project? Common values are
-  #   3 - Alpha
-  #   4 - Beta
-  #   5 - Production/Stable
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Topic :: Software Development :: Testing",
@@ -25,12 +21,13 @@ classifiers = [
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3 :: Only",
 ]
 
 dependencies = [
     "boto3>=1.26",
-    "pandas==2.0.3",
+    "pandas>=2.0.3",
     "sagemaker>=2.159",
 ]
 
@@ -43,16 +40,11 @@ dev = [
     "jupyter",
     "build",
 ]
-docs = [
-    "py2puml==0.8.0",
-]
 
 [project.urls]
 "Homepage" = "https://github.com/stiebels/sagemaker-rightline"
 
 [build-system]
-# These are the assumed default build requirements from pip:
-# https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
 requires = ["setuptools>=43.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
@@ -65,7 +57,7 @@ line-length = 100
 [tool.flake8]
 max-line-length = 100
 per-file-ignores = [
-    'tests/*:F401,F811',
+    'tests/*:F401,F811,E231'
 ]
 
 [tool.isort]
