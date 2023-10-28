@@ -1,6 +1,9 @@
 Usage
 =====
 
+.. toctree::
+ :maxdepth: 2
+
 Python
 ------
 
@@ -163,6 +166,7 @@ Pre-Commit Hook
 To use the `sagemaker-rightline` package as a pre-commit hook, add the following to your `.pre-commit-config.yaml`:
 
 .. code:: yaml
+
    repos:
    - repo: https://github.com/stiebels/sagemaker-rightline@main
       hooks:
