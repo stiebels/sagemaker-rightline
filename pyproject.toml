@@ -1,10 +1,6 @@
 [project]
 name = "sagemaker-rightline"
-<<<<<<< HEAD
-requires-python = ">=3.8,<=3.13"
-=======
 requires-python = ">3.7,<3.13"
->>>>>>> main
 dynamic = ["version"]
 description = "Python package to easily validate properties of a SageMaker Pipeline."
 authors = [
