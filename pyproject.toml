@@ -64,7 +64,7 @@ line-length = 100
 max-line-length = 100
 per-file-ignores = [
     'tests/*:F401,F811,E231',
-    'examples/*:E231',
+    'examples/*:E231,F405,F403',
     'sagemaker_rightline/validations.py:E713'
 ]
 

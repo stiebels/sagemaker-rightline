@@ -24,6 +24,7 @@ def parse_args() -> argparse.Namespace:
         type=str,
         required=False,
         help="Execute from specified working directory.",
+        default=argparse.SUPPRESS,
     )
     args = parser.parse_args()
     return args  # pragma: no cover
