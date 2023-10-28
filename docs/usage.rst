@@ -4,8 +4,8 @@ Usage
 Content
 -------
 * `Python <#python>`__
-* `Command Line <#command line>`__
-* `Pre-Commit Hook <#pre-commit hook>`__
+* `Command Line <#command-line>`__
+* `Pre-Commit Hook <#pre-commit-hook>`__
 
 Python
 ------
