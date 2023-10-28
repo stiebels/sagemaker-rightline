@@ -5,8 +5,9 @@ Features
  :maxdepth: 2
 
 To get an overview of the structure of the project, have a look at the class diagram, which is auto-generated at build time together with the corresponding PUML file:
-.. raw:: html
-    :file: sagemaker_rightline.svg
+
+.. image:: sagemaker_rightline.svg
+   :target: _images/myfile.svg
 
 ⚙️ Configuration
 ----------------
