@@ -19,7 +19,6 @@ API
     :titlesonly:
     :maxdepth: 1
 
-    api.rst
 
 Features
 --------
