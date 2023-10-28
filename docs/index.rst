@@ -9,10 +9,17 @@ and is not yet ready for production use. We welcome contributions!
 
 Content
 -------
-
 *  `Features <#features>`__
 *  `Usage <#usage>`__
 *  `Contributing <#contributing>`__
+
+API
+---
+.. toctree::
+    :titlesonly:
+    :maxdepth: 1
+
+    api.rst
 
 Features
 --------
