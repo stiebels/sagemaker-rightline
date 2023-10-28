@@ -14,6 +14,9 @@ Content
     :titlesonly:
     :maxdepth: 1
 
+    features.rst
+    usage.rst
+
 Release
 -------
 
