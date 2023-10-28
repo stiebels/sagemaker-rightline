@@ -1,5 +1,3 @@
-sagemaker.config INFO - Not applying SDK defaults from location: /etc/xdg/sagemaker/config.yaml
-sagemaker.config INFO - Not applying SDK defaults from location: /github/home/.config/sagemaker/config.yaml
 @startuml sagemaker_rightline
 namespace sagemaker_rightline {
   namespace model {}
