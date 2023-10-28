@@ -24,7 +24,7 @@ def parse_args() -> argparse.Namespace:
         help="Execute from specified working directory.",
     )
     args = parser.parse_args()
-    return args
+    return args  # pragma: no cover
 
 
 def main():

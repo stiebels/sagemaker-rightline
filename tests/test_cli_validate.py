@@ -69,7 +69,7 @@ def test_main_negative(parse_args) -> None:
 
 
 def test_parse_args_fail_required() -> None:
-    # Fail with Systemexit if required arguments are not provided.
+    """Fail with SystemExit if required arguments are not provided."""
     with pytest.raises(SystemExit) as excinfo:
         parse_args()
     assert excinfo.value.code == 2
