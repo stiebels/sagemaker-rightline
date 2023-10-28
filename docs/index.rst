@@ -13,7 +13,6 @@ Content
 .. toctree::
     :titlesonly:
     :maxdepth: 1
-
     features.rst
     usage.rst
 
