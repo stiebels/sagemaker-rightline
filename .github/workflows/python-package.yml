@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
@@ -65,14 +65,10 @@ jobs:
         name: Generate Class Diagram
         with:
           puml_version: "1.2023.7"
-          pip_install_deps_cmd: "pip install -e .[docs]"
+          pip_install_deps_cmd: "pip install -e . && pip install -r docs/requirements.txt"
           path: ${{ env.PROJECT_NAME }}
           module: ${{ env.PROJECT_NAME }}
           output_dir: "docs"
-      - name: Generate API docs
-        run: |
-          pip install -e .[docs]
-          sphinx-apidoc -f -T -o ./docs/api/ ./${{ env.PROJECT_NAME }}
       - name: Commit changed files
         run: |
           if [[ `git status --porcelain` ]]; then
