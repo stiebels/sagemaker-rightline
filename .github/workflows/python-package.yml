@@ -65,13 +65,13 @@ jobs:
         name: Generate Class Diagram
         with:
           puml_version: "1.2023.7"
-          pip_install_deps_cmd: "pip install -e .[docs]"
+          pip_install_deps_cmd: "pip install -e . && pip install docs/requirements.txt"
           path: ${{ env.PROJECT_NAME }}
           module: ${{ env.PROJECT_NAME }}
           output_dir: "docs"
       - name: Generate API docs
         run: |
-          pip install -e .[docs]
+          pip install docs/requirements.txt
           sphinx-apidoc -f -T -o ./docs/api/ ./${{ env.PROJECT_NAME }}
       - name: Commit changed files
         run: |
