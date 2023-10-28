@@ -1,8 +1,12 @@
 Features
 ========
 
-.. toctree::
- :maxdepth: 2
+Content
+-------
+* `Configuration <#configuration>`__
+* `Validations <#validations>`__
+* `Rules <#rules>`__
+* `Report <#report>`__
 
 To get an overview of the structure of the project, have a look at the class diagram, which is auto-generated at build time together with the corresponding PUML file:
 

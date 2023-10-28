@@ -10,11 +10,12 @@ and is not yet ready for production use. We welcome contributions!
 Content
 -------
 
-* :doc:`Features <features>`
-* :doc:`Usage <usage>`
-* `Release <#release>`__
-*  `Contributing <#contributing>`__
+.. toctree::
+    :titlesonly:
+    :maxdepth: 1
 
+    features.rst
+    usage.rst
 
 Release
 -------

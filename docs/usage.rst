@@ -1,8 +1,11 @@
 Usage
 =====
 
-.. toctree::
- :maxdepth: 2
+Content
+-------
+* `Python <#python>`__
+* `Command Line <#command line>`__
+* `Pre-Commit Hook <#pre-commit hook>`__
 
 Python
 ------
@@ -136,6 +139,8 @@ The `sagemaker-rightline` package can be used as a command line tool.
    pip install sagemaker-rightline
    cd <your-project-directory>
    sagemaker-rightline --configuration <relative-path-to-file-containing-get-configuration-function>.py
+
+This CLI tool expects that there exists a `py` file in your project that contains a `get_configuration` function, which returns a `sagemaker_rightline.model.Configuration` object.
 
 Try it out in the context of the `sagemaker-rightline` project example:
 
