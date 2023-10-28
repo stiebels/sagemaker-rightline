@@ -48,9 +48,6 @@ dev = [
 requires = ["setuptools>=43.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[project.scripts]
-sagemaker-rightline = "sagemaker_rightline.cli.validate:main"
-
 [tool.setuptools.dynamic]
 version = {attr = "sagemaker_rightline.__version__"}
 
