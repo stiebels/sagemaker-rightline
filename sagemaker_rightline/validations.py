@@ -932,3 +932,45 @@ class StepCallbackSqsQueueExists(Validation):
                 subject=str(sqs_url_observed),
                 validation_name=self.name,
             )
+
+
+class PipelineStepsIONamesUnique(Validation):
+    """Validate that all names of ProcessingInput objects and ProcessingOutput
+    objects are globally unique."""
+
+    def __init__(
+        self,
+    ) -> None:
+        """Initialize StepOutputsAsExpected validation.
+
+        :return: None
+        :rtype: None
+        """
+
+        super().__init__(
+            name="PipelineStepsIONamesUnique",
+            paths=[
+                ".steps[step_type/value==Processing]].outputs",
+            ],
+            rule=Equals(),
+        )
+
+    def run(
+        self,
+        sagemaker_pipeline: Pipeline,
+    ) -> ValidationResult:
+        """Runs validation of StepOutputs on Pipeline.
+
+        :param sagemaker_pipeline: SageMaker Pipeline
+        :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
+        :return: validation result
+        :rtype: ValidationResult
+        """
+
+        outputs_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
+        outputs_names_observed = [
+            output.output_name for outputs in outputs_observed for output in outputs
+        ]
+        outputs_names_expected = list(set(outputs_names_observed))
+        result = self.rule.run(outputs_names_observed, outputs_names_expected, self.name)
+        return result

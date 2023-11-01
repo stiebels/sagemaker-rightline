@@ -11,6 +11,7 @@ from sagemaker_rightline.rules import Contains, Equals
 from sagemaker_rightline.validations import (
     ContainerImage,
     PipelineParametersAsExpected,
+    PipelineStepsIONamesUnique,
     StepCallbackSqsQueueExists,
     StepImagesExist,
     StepInputsAsExpected,
@@ -1093,4 +1094,10 @@ def test_sqs_queue_exists_positive(sqs_client, iam_client, sagemaker_pipeline) -
 def test_sqs_queue_exists_negative(sqs_client, iam_client, sagemaker_pipeline) -> None:
     sqs_queue_exists = StepCallbackSqsQueueExists()
     result = sqs_queue_exists.run(sagemaker_pipeline)
+    assert not result.success
+
+
+def test_pipeline_steps_ionames_unique_negative(sagemaker_pipeline) -> None:
+    pipeline_steps_io_names_unique = PipelineStepsIONamesUnique()
+    result = pipeline_steps_io_names_unique.run(sagemaker_pipeline)
     assert not result.success
