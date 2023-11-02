@@ -44,6 +44,8 @@ class sagemaker_rightline.validations.PipelineParametersAsExpected {
   parameters_expected: List[Parameter]
   ignore_default_value: bool
 }
+class sagemaker_rightline.validations.PipelineProcessingStepsIONamesUnique {
+}
 class sagemaker_rightline.validations.StepCallbackSqsQueueExists {
   client: None
 }
@@ -93,6 +95,7 @@ sagemaker_rightline.model.ValidationFailedError *-- sagemaker_rightline.model.Va
 sagemaker_rightline.model.Rule <|-- sagemaker_rightline.rules.Contains
 sagemaker_rightline.model.Rule <|-- sagemaker_rightline.rules.Equals
 sagemaker_rightline.model.Validation <|-- sagemaker_rightline.validations.PipelineParametersAsExpected
+sagemaker_rightline.model.Validation <|-- sagemaker_rightline.validations.PipelineProcessingStepsIONamesUnique
 sagemaker_rightline.model.Validation <|-- sagemaker_rightline.validations.StepCallbackSqsQueueExists
 sagemaker_rightline.model.Validation <|-- sagemaker_rightline.validations.StepImagesExist
 sagemaker_rightline.model.Validation <|-- sagemaker_rightline.validations.StepInputsAsExpected

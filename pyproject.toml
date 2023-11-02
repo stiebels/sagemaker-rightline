@@ -57,7 +57,8 @@ line-length = 100
 [tool.flake8]
 max-line-length = 100
 per-file-ignores = [
-    'tests/*:F401,F811,E231'
+    'tests/*:F401,F811,E231',
+    'sagemaker_rightline/validations.py:E713'
 ]
 
 [tool.isort]
