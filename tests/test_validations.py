@@ -1099,17 +1099,6 @@ def test_sqs_queue_exists_negative(sqs_client, iam_client, sagemaker_pipeline) -
     assert not result.success
 
 
-# def test_pipeline_processing_steps_ionames_unique_positive(sagemaker_pipeline) -> None:
-#     with mock.patch("sagemaker_rightline.validations.Validation.get_attribute") as get_attribute:
-#         get_attribute.return_value = [
-#             [ProcessingInput(input_name="input-1"), ProcessingInput(input_name="input-2")],
-#             [ProcessingOutput(output_name="output-1"), ProcessingOutput(output_name="output-2")],
-#         ]
-#         pipeline_steps_io_names_unique = PipelineProcessingStepsIONamesUnique()
-#         result = pipeline_steps_io_names_unique.run(sagemaker_pipeline)
-#         assert result.success
-
-
 @pytest.mark.parametrize(
     "io,success",
     [
