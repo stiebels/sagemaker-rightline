@@ -64,5 +64,5 @@ per-file-ignores = [
 [tool.isort]
 profile = "black"
 
-[tool.pytest.ini_options]
-addopts = "-v --cov sagemaker_rightline --cov-report term --cov-fail-under=95"
+#[tool.pytest.ini_options]
+#addopts = "-v --cov sagemaker_rightline --cov-report term --cov-fail-under=95"

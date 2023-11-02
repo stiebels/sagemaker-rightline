@@ -6,7 +6,7 @@ from sagemaker_rightline.model import Rule, ValidationResult
 class Equals(Rule):
     """Check if two lists are equal."""
 
-    def __init__(self, negative: bool = False) -> None:
+    def __init__(self, ignore_order: bool = True, negative: bool = False) -> None:
         """Check if two lists are equal.
 
         :param negative: whether the rule should be inverted, i.e. "not" (default: False)

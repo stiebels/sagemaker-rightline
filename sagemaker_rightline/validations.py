@@ -934,7 +934,7 @@ class StepCallbackSqsQueueExists(Validation):
             )
 
 
-class PipelineStepsIONamesUnique(Validation):
+class PipelineProcessingStepsIONamesUnique(Validation):
     """Validate that all names of ProcessingInput objects and ProcessingOutput
     objects are globally unique."""
 
@@ -948,11 +948,11 @@ class PipelineStepsIONamesUnique(Validation):
         """
 
         super().__init__(
-            name="PipelineStepsIONamesUnique",
+            name="PipelineProcessingStepsIONamesUnique",
             paths=[
                 ".steps[step_type/value==Processing]].outputs",
+                ".steps[step_type/value==Processing]].inputs",
             ],
-            rule=Equals(),
         )
 
     def run(
@@ -966,11 +966,25 @@ class PipelineStepsIONamesUnique(Validation):
         :return: validation result
         :rtype: ValidationResult
         """
-
-        outputs_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
-        outputs_names_observed = [
-            output.output_name for outputs in outputs_observed for output in outputs
-        ]
-        outputs_names_expected = list(set(outputs_names_observed))
-        result = self.rule.run(outputs_names_observed, outputs_names_expected, self.name)
-        return result
+        io_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
+        is_observed_flat = [io for io_group in io_observed for io in io_group]
+        input_names = []
+        output_names = []
+        for io in is_observed_flat:
+            if isinstance(io, ProcessingOutput):
+                output_names.append(io.output_name)
+            elif isinstance(io, ProcessingInput):
+                input_names.append(io.input_name)
+            else:
+                raise ValueError(f"Unknown type {type(io)}.")
+        io_names_observed = input_names + output_names
+        io_names_expected = list(set(io_names_observed))
+        is_equal = sorted(io_names_observed) == sorted(io_names_expected)
+        return ValidationResult(
+            validation_name=self.name,
+            success=is_equal,
+            negative=False,
+            message=f"{str(io_names_observed)} does {'not ' if not is_equal else ''}"
+            f"equal {str(io_names_expected)}",
+            subject=str(io_names_expected),
+        )
