@@ -1,3 +1,4 @@
+import logging
 import os
 
 from tests.fixtures.constants import (
@@ -5,6 +6,9 @@ from tests.fixtures.constants import (
     TEST_AWS_DEFAULT_REGION,
     TEST_AWS_SECRET_ACCESS_KEY,
 )
+
+# Sagemaker continuously complains about config since newer versions. Suppressing this.
+logging.getLogger("sagemaker.config").setLevel(logging.WARNING)
 
 
 def pytest_configure(config):
