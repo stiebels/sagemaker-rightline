@@ -1150,3 +1150,13 @@ def test_pipeline_processing_steps_ionames_unique_negative(sagemaker_pipeline, i
         pipeline_steps_io_names_unique = PipelineProcessingStepsIONamesUnique()
         result = pipeline_steps_io_names_unique.run(sagemaker_pipeline)
         assert success == result.success
+
+
+def test_pipeline_processing_steps_ionames_unique_raise(sagemaker_pipeline) -> None:
+    with mock.patch("sagemaker_rightline.validations.Validation.get_attribute") as get_attribute:
+        get_attribute.return_value = [
+            [ProcessingInput(input_name="input-1"), TrainingInput(s3_data="s3://some-bucket")]
+        ]
+        pipeline_steps_io_names_unique = PipelineProcessingStepsIONamesUnique()
+        with pytest.raises(ValueError):
+            _ = pipeline_steps_io_names_unique.run(sagemaker_pipeline)
