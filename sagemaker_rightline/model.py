@@ -148,7 +148,7 @@ class Validation(ABC):
         sagemaker_pipeline: Pipeline,
     ) -> ValidationResult:
         """Run validation."""
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
 
 class Report:
