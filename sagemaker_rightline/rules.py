@@ -34,14 +34,15 @@ class Equals(Rule):
         :rtype: ValidationResult
         """
         try:
-            # In case of int, float, str
-            is_equal = set(observed) == set(expected)
-        except TypeError:
-            # In case of dict
             if isinstance(observed, dict) and isinstance(expected, dict):
+                # In case of dict
                 is_equal = observed == expected
+            else:
+                # In case of int, float, str
+                is_equal = set(observed) == set(expected)
+        except TypeError:
             # In case of nested list
-            elif isinstance(observed, list) and isinstance(expected, list):
+            if isinstance(observed, list) and isinstance(expected, list):
                 is_equal = all(True if item in observed else False for item in expected) and all(
                     True if item in expected else False for item in observed
                 )
