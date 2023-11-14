@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 from moto import mock_ecr, mock_iam, mock_lambda, mock_sqs
 from sagemaker.inputs import FileSystemInput, TrainingInput, TransformInput
@@ -11,6 +13,7 @@ from sagemaker_rightline.rules import Contains, Equals
 from sagemaker_rightline.validations import (
     ContainerImage,
     PipelineParametersAsExpected,
+    PipelineProcessingStepsIONamesUnique,
     StepCallbackSqsQueueExists,
     StepImagesExist,
     StepInputsAsExpected,
@@ -1094,3 +1097,66 @@ def test_sqs_queue_exists_negative(sqs_client, iam_client, sagemaker_pipeline) -
     sqs_queue_exists = StepCallbackSqsQueueExists()
     result = sqs_queue_exists.run(sagemaker_pipeline)
     assert not result.success
+
+
+@pytest.mark.parametrize(
+    "io,success",
+    [
+        [
+            [
+                [ProcessingInput(input_name="input-1"), ProcessingInput(input_name="input-2")],
+                [
+                    ProcessingOutput(output_name="output-1"),
+                    ProcessingOutput(output_name="output-2"),
+                ],
+            ],
+            True,
+        ],
+        [
+            [
+                [ProcessingInput(input_name="input-1"), ProcessingInput(input_name="input-1")],
+                [
+                    ProcessingOutput(output_name="output-1"),
+                    ProcessingOutput(output_name="output-2"),
+                ],
+            ],
+            False,
+        ],
+        [
+            [
+                [ProcessingInput(input_name="input-1"), ProcessingInput(input_name="input-2")],
+                [
+                    ProcessingOutput(output_name="output-1"),
+                    ProcessingOutput(output_name="output-1"),
+                ],
+            ],
+            False,
+        ],
+        [
+            [
+                [ProcessingInput(input_name="input-1"), ProcessingInput(input_name="input-1")],
+                [
+                    ProcessingOutput(output_name="output-1"),
+                    ProcessingOutput(output_name="output-1"),
+                ],
+            ],
+            False,
+        ],
+    ],
+)
+def test_pipeline_processing_steps_ionames_unique_negative(sagemaker_pipeline, io, success) -> None:
+    with mock.patch("sagemaker_rightline.validations.Validation.get_attribute") as get_attribute:
+        get_attribute.return_value = io
+        pipeline_steps_io_names_unique = PipelineProcessingStepsIONamesUnique()
+        result = pipeline_steps_io_names_unique.run(sagemaker_pipeline)
+        assert success == result.success
+
+
+def test_pipeline_processing_steps_ionames_unique_raise(sagemaker_pipeline) -> None:
+    with mock.patch("sagemaker_rightline.validations.Validation.get_attribute") as get_attribute:
+        get_attribute.return_value = [
+            [ProcessingInput(input_name="input-1"), TrainingInput(s3_data="s3://some-bucket")]
+        ]
+        pipeline_steps_io_names_unique = PipelineProcessingStepsIONamesUnique()
+        with pytest.raises(ValueError):
+            _ = pipeline_steps_io_names_unique.run(sagemaker_pipeline)

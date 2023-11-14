@@ -932,3 +932,59 @@ class StepCallbackSqsQueueExists(Validation):
                 subject=str(sqs_url_observed),
                 validation_name=self.name,
             )
+
+
+class PipelineProcessingStepsIONamesUnique(Validation):
+    """Validate that all names of ProcessingInput objects and ProcessingOutput
+    objects are globally unique."""
+
+    def __init__(
+        self,
+    ) -> None:
+        """Initialize StepOutputsAsExpected validation.
+
+        :return: None
+        :rtype: None
+        """
+
+        super().__init__(
+            name="PipelineProcessingStepsIONamesUnique",
+            paths=[
+                ".steps[step_type/value==Processing]].outputs",
+                ".steps[step_type/value==Processing]].inputs",
+            ],
+        )
+
+    def run(
+        self,
+        sagemaker_pipeline: Pipeline,
+    ) -> ValidationResult:
+        """Runs validation of StepOutputs on Pipeline.
+
+        :param sagemaker_pipeline: SageMaker Pipeline
+        :type sagemaker_pipeline: sagemaker.workflow.pipeline.Pipeline
+        :return: validation result
+        :rtype: ValidationResult
+        """
+        io_observed = Validation.get_attribute(sagemaker_pipeline, self.paths)
+        is_observed_flat = [io for io_group in io_observed for io in io_group]
+        input_names = []
+        output_names = []
+        for io in is_observed_flat:
+            if isinstance(io, ProcessingOutput):
+                output_names.append(io.output_name)
+            elif isinstance(io, ProcessingInput):
+                input_names.append(io.input_name)
+            else:
+                raise ValueError(f"Unknown type {type(io)}.")
+        io_names_observed = input_names + output_names
+        io_names_expected = list(set(io_names_observed))
+        is_equal = sorted(io_names_observed) == sorted(io_names_expected)
+        return ValidationResult(
+            validation_name=self.name,
+            success=is_equal,
+            negative=False,
+            message=f"{str(io_names_observed)} does {'not ' if not is_equal else ''}"
+            f"equal {str(io_names_expected)}",
+            subject=str(io_names_expected),
+        )

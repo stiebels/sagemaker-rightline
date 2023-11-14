@@ -50,7 +50,7 @@ class Rule(ABC):
         :return: validation result
         :rtype: ValidationResult
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
 
 class Validation(ABC):
@@ -148,7 +148,7 @@ class Validation(ABC):
         sagemaker_pipeline: Pipeline,
     ) -> ValidationResult:
         """Run validation."""
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
 
 class Report:
