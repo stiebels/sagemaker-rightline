@@ -50,7 +50,7 @@ class Rule(ABC):
         :return: validation result
         :rtype: ValidationResult
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
 
 class Validation(ABC):
