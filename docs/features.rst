@@ -52,6 +52,7 @@ The following ``Validations`` are currently implemented:
 *  ``StepOutputsAsExpected``
 *  ``StepOutputsMatchInputsAsExpected``
 *  ``StepCallbackSqsQueueExists``
+*  ``PipelineProcessingStepsIONamesUnique``
 
 In most cases, a ``Validation`` subclass requires passing a ``Rule``
 object to its constructor.
