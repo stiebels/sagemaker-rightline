@@ -87,8 +87,8 @@ def get_sagemaker_pipeline(
 
     sm_processing_step_sklearn = ProcessingStep(
         name="sm_processing_step_sklearn",
-        code=script_path,
         ste_args=sm_processor_sklearn.run(
+            code=script_path,
             inputs=[
                 ProcessingInput(
                     source=f"s3://{DUMMY_BUCKET}/output-1",
@@ -132,46 +132,47 @@ def get_sagemaker_pipeline(
 
     sm_processing_step_spark = ProcessingStep(
         name="sm_processing_step_spark",
-        code=script_path,
-        processor=sm_processor_spark,
-        kms_key="some/kms-key-alias",
-        inputs=[
-            ProcessingInput(
-                source=sm_processing_step_sklearn.outputs,
-                destination="/opt/ml/processing/input",
-                input_name="input-1",
-            ),
-            ProcessingInput(
-                source=f"s3://{DUMMY_BUCKET}/input-2",
-                destination="/opt/ml/processing/input",
-                input_name="input-2",
-            ),
-            ProcessingInput(
-                source=Join(
-                    on="/",
-                    values=[
-                        "s3:/",
-                        DUMMY_BUCKET,
-                        ExecutionVariables.PIPELINE_EXECUTION_ID,
-                        "output-3",
-                    ],
+        step_args=sm_processor_spark.run(
+            code=script_path,
+            kms_key="some/kms-key-alias",
+            inputs=[
+                ProcessingInput(
+                    source=sm_processing_step_sklearn.outputs,
+                    destination="/opt/ml/processing/input",
+                    input_name="input-1",
                 ),
-                destination="/opt/ml/processing/input",
-                input_name="input-3",
-            ),
-        ],
-        outputs=[
-            ProcessingOutput(
-                output_name="output-1",
-                source="/opt/ml/processing/output/1",
-                destination=f"s3://{DUMMY_BUCKET}/output-3",
-            ),
-            ProcessingOutput(
-                output_name="output-2",
-                source="/opt/ml/processing/output/2",
-                destination=f"s3://{DUMMY_BUCKET}/output-4",
-            ),
-        ],
+                ProcessingInput(
+                    source=f"s3://{DUMMY_BUCKET}/input-2",
+                    destination="/opt/ml/processing/input",
+                    input_name="input-2",
+                ),
+                ProcessingInput(
+                    source=Join(
+                        on="/",
+                        values=[
+                            "s3:/",
+                            DUMMY_BUCKET,
+                            ExecutionVariables.PIPELINE_EXECUTION_ID,
+                            "output-3",
+                        ],
+                    ),
+                    destination="/opt/ml/processing/input",
+                    input_name="input-3",
+                ),
+            ],
+            outputs=[
+                ProcessingOutput(
+                    output_name="output-1",
+                    source="/opt/ml/processing/output/1",
+                    destination=f"s3://{DUMMY_BUCKET}/output-3",
+                ),
+                ProcessingOutput(
+                    output_name="output-2",
+                    source="/opt/ml/processing/output/2",
+                    destination=f"s3://{DUMMY_BUCKET}/output-4",
+                ),
+            ],
+        ),
         depends_on=[sm_processing_step_sklearn.name],
     )
 
