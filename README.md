@@ -14,6 +14,9 @@ Note that at present this package is in an early stage of development and is not
 
 - [Features](#features)
 - [Usage](#usage)
+  - [Python](#python)
+  - [Command Line](#command line)
+  - [as Pre-Commit hook](#pre-commit hook)
 - [Contributing](#contributing)
 
 ## Features
@@ -71,6 +74,7 @@ to allow for further analysis.
 
 ## Usage
 
+### Python
 ```python
 from sagemaker.processing import NetworkConfig, ProcessingInput, ProcessingOutput
 from sagemaker.workflow.parameters import ParameterString
@@ -187,6 +191,49 @@ df = cm.run()
 df
 ```
 ![img.png](./docs/report.png)
+
+### Command Line
+The `sagemaker-rightline` package can be used as a command line tool.
+```commandline
+pip install sagemaker-rightline
+cd <your-project-directory>
+sagemaker-rightline --configuration <relative-path-to-file-containing-get-configuration-function>.py
+```
+
+Use the `--help` flag to get an overview of the available options:
+```commandline
+$ sagemaker-rightline --help
+Usage: sagemaker-rightline [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --help  Show this message and exit.
+  --configuration Path to the configuration file that holds the get_configuration function, which returns a sagemaker_rightline.model.Configuration object
+  --working-dir [OPTIONAL] Path to the working directory. If not set, the current working directory will be used.
+```
+
+Try it out in the context of the `sagemaker-rightline` project example:
+```commandline
+git clone git@github.com:stiebels/sagemaker-rightline.git
+cd sagemaker-rightline
+pip install -e .
+cd sagemaker_rightline/examples/sm_pipeline_project
+sagemaker-rightline --configuration sm_rightline_config.py
+```
+
+### Pre-Commit Hook
+To use the `sagemaker-rightline` package as a pre-commit hook, add the following to your `.pre-commit-config.yaml`:
+```yaml
+repos:
+- repo: https://github.com/stiebels/sagemaker-rightline@main
+  hooks:
+  - id: sagemaker-rightline
+    name: sagemaker-rightline
+    entry: sagemaker-rightline
+    language: system
+    types: [python]
+    pass_filenames: false
+    args: ['--configuration', '<relative-path-to-file-containing-get-configuration-function>.py']
+```
 
 ## Release
 Publishing a new version to PyPI is done via the `Release` functionality.
